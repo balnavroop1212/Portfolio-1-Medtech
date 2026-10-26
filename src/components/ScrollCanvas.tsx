@@ -57,13 +57,34 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
-      const scale = Math.max(cw / sourceWidth, ch / sourceHeight);
-      const drawWidth = Math.round(sourceWidth * scale);
-      const drawHeight = Math.round(sourceHeight * scale);
-      const drawX = Math.round((cw - drawWidth) / 2);
-      const drawY = Math.round((ch - drawHeight) / 2);
+      // Detect mobile portrait viewport (phones & portrait tablets)
+      const isMobilePortrait = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
 
-      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      if (isMobilePortrait) {
+        // 1. Fill solid studio cream background to seamlessly blend canvas margins
+        ctx.fillStyle = '#f6f5f0';
+        ctx.fillRect(0, 0, cw, ch);
+
+        // 2. Scale 16:9 width so 100% of the camera hardware and exploded lenses are visible
+        const scale = (cw / sourceWidth) * 1.14;
+        const drawWidth = Math.round(sourceWidth * scale);
+        const drawHeight = Math.round(sourceHeight * scale);
+        const drawX = Math.round((cw - drawWidth) / 2);
+
+        // 3. Position vertically in the upper gallery zone (top ~12.5% of mobile screen)
+        const drawY = Math.round(ch * 0.125);
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      } else {
+        // Desktop & Laptop: 100% UNTOUCHED
+        const scale = Math.max(cw / sourceWidth, ch / sourceHeight);
+        const drawWidth = Math.round(sourceWidth * scale);
+        const drawHeight = Math.round(sourceHeight * scale);
+        const drawX = Math.round((cw - drawWidth) / 2);
+        const drawY = Math.round((ch - drawHeight) / 2);
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      }
     };
 
     const updateScroll = () => {

@@ -1028,6 +1028,17 @@
       gap: 16px;
     }
 
+    .process-steps-dock {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .mobile-swipe-hint {
+      display: none;
+    }
+
     .step-card-compact {
       padding: 24px 28px;
       display: flex;
@@ -1363,66 +1374,295 @@
       .nav-toggle {
         display: block;
       }
-
-      .hero-layout {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 40px;
-      }
-
-      .hero-right-telemetry {
-        flex-direction: row;
-        margin-left: 0;
-        flex-wrap: wrap;
-      }
-
-      .pillars-horizontal-dock,
-      .app-cards-dock {
-        grid-template-columns: 1fr;
-      }
-
-      #research {
-        justify-content: center;
-        align-items: flex-start;
-        padding-bottom: 40px;
-      }
-
-      #research .section-stage {
-        justify-content: flex-start;
-      }
-
-      .research-dock-card {
-        max-width: 100%;
-        margin-left: 0;
-      }
-
-      .contact-layout-studio {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
     }
 
-    @media (max-width: 640px) {
+    /* ==========================================================================
+       MOBILE DEVICE SPECIFIC OPTIMIZATION (<= 768px)
+       Dual-tier layout:
+       - Upper 45% Viewport: Dedicated unobstructed 3D camera & lens animation
+       - Lower 55% Viewport: Docked Smoked Obsidian Glass cards & horizontal snap carousels
+       Laptop & desktop layouts (width > 768px) remain 100% untouched.
+       ========================================================================== */
+    @media (max-width: 768px) {
+      /* 1. Header Navbar */
       #navbar {
-        padding: 0 16px;
-        top: 16px;
+        padding: 0 16px !important;
+        top: 14px !important;
+      }
+
+      #navbar .nav-logo {
+        padding: 7px 16px !important;
+        font-size: 1rem !important;
+        letter-spacing: 0.18em !important;
+      }
+
+      #navbar #nav-cta-btn {
+        display: none !important; /* Preserved inside mobile drawer to prevent navbar crowding */
+      }
+
+      .audio-btn {
+        width: 36px !important;
+        height: 36px !important;
+      }
+
+      .nav-toggle {
+        width: 36px !important;
+        height: 36px !important;
+      }
+
+      /* 2. Container & Section Baseline */
+      #content-container,
+      .scroll-content-overlay,
+      main {
+        padding-bottom: 40vh !important;
       }
 
       section.site-section {
-        padding: 100px 20px 40px;
+        min-height: 100vh !important;
+        justify-content: flex-end !important;
+        padding: 90px 16px 28px !important;
+        margin-bottom: 35vh !important;
+      }
+
+      section.site-section:last-of-type,
+      #research {
+        margin-bottom: 0 !important;
+      }
+
+      /* 3. Hero Section on Mobile */
+      #hero {
+        justify-content: flex-end !important;
+        padding-top: 80px !important;
+        padding-bottom: 24px !important;
+      }
+
+      .hero-layout {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0 !important;
       }
 
       .hero-left-column {
-        gap: 18px;
+        max-width: 100% !important;
+        width: 100% !important;
+        gap: 0 !important;
       }
 
-      .form-row {
-        grid-template-columns: 1fr;
-        gap: 0;
+      .hero-rail-ruler {
+        display: none !important;
+      }
+
+      .hero-eyebrow {
+        font-size: 10px !important;
+        letter-spacing: 0.18em !important;
+        margin-bottom: 8px !important;
+      }
+
+      .hero-headline {
+        font-size: clamp(1.85rem, 6.8vw, 2.25rem) !important;
+        line-height: 1.1 !important;
+        margin-bottom: 10px !important;
+      }
+
+      .hero-subhead {
+        font-size: 0.92rem !important;
+        line-height: 1.5 !important;
+        margin-bottom: 16px !important;
+        max-width: 100% !important;
+      }
+
+      .hero-cta-group {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 10px !important;
+        width: 100% !important;
+      }
+
+      .btn-hero-primary,
+      .btn-hero-secondary {
+        flex: 1 !important;
+        justify-content: center !important;
+        padding: 11px 16px !important;
+        font-size: 12px !important;
+      }
+
+      .hero-right-telemetry {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 8px !important;
+        margin-top: 14px !important;
+        margin-left: 0 !important;
+        width: 100% !important;
+      }
+
+      .telemetry-card {
+        flex: 1 !important;
+        padding: 9px 12px !important;
+        border-radius: 14px !important;
+      }
+
+      .telemetry-value {
+        font-size: 0.95rem !important;
+      }
+
+      .telemetry-sub {
+        font-size: 9.5px !important;
+      }
+
+      .hero-bottom-strip {
+        display: none !important;
+      }
+
+      /* 4. Section 2: Vision Card */
+      .vision-card-dock {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 22px 18px !important;
+        border-radius: 22px !important;
+      }
+
+      .section-title-sm {
+        font-size: clamp(1.45rem, 5.2vw, 1.8rem) !important;
+        line-height: 1.14 !important;
+        margin-bottom: 8px !important;
+      }
+
+      .section-body {
+        font-size: 0.88rem !important;
+        line-height: 1.55 !important;
+        margin-bottom: 12px !important;
+      }
+
+      .vision-quote-box {
+        padding: 10px 14px !important;
+      }
+
+      .vision-quote-text {
+        font-size: 0.9rem !important;
+      }
+
+      /* 5. Floating Obsidian Header Bars */
+      .tech-header-compact,
+      .section-header-floating,
+      .chapter-heading-wrap {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 16px 18px !important;
+        border-radius: 18px !important;
+        margin-bottom: 10px !important;
+      }
+
+      /* 6. Section 3 (Technology), Section 4 (Process), Section 5 (Applications) Horizontal Snap Decks */
+      .pillars-horizontal-dock,
+      .app-cards-dock,
+      .process-steps-dock {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        gap: 12px !important;
+        width: 100% !important;
+        padding-bottom: 6px !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+      }
+
+      .pillars-horizontal-dock::-webkit-scrollbar,
+      .app-cards-dock::-webkit-scrollbar,
+      .process-steps-dock::-webkit-scrollbar {
+        display: none !important;
+      }
+
+      .pillar-glass-pill,
+      .app-card-clean,
+      .step-card-compact {
+        min-width: 82vw !important;
+        max-width: 85vw !important;
+        scroll-snap-align: center !important;
+        flex-shrink: 0 !important;
+        padding: 18px 18px !important;
+        min-height: 150px !important;
+        border-radius: 20px !important;
+      }
+
+      .pillar-name,
+      .step-info-title {
+        font-size: 1.15rem !important;
+        margin-bottom: 6px !important;
+      }
+
+      .pillar-desc-sm,
+      .step-info-desc {
+        font-size: 0.85rem !important;
+        line-height: 1.45 !important;
+      }
+
+      .process-left-flow {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+
+      /* 7. Section 6: Design Card */
+      .design-dock-card {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 22px 18px !important;
+        border-radius: 22px !important;
+      }
+
+      /* 8. Section 7: Research Card */
+      .research-dock-card {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 22px 18px !important;
+        border-radius: 22px !important;
+        margin-left: 0 !important;
+      }
+
+      /* 9. Section 8: Studio Contact Section */
+      #contact {
+        padding: 70px 16px 50px !important;
+      }
+
+      .contact-layout-studio {
+        grid-template-columns: 1fr !important;
+        gap: 30px !important;
+      }
+
+      .contact-info-column h2 {
+        font-size: 2.3rem !important;
       }
 
       .contact-form-studio-card {
-        padding: 28px 20px;
+        padding: 22px 18px !important;
+        border-radius: 22px !important;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr !important;
+        gap: 0 !important;
+      }
+
+      .form-input,
+      .form-textarea,
+      .form-select {
+        font-size: 16px !important; /* Critical: Stops iOS Safari from auto-zooming */
+        padding: 12px 14px !important;
+      }
+
+      /* Mobile Horizontal Swipe Cue Indicator */
+      .mobile-swipe-hint {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        font-family: var(--font-mono) !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.16em !important;
+        color: var(--amber-optical) !important;
+        text-transform: uppercase !important;
+        margin-bottom: 8px !important;
+        padding-left: 2px !important;
       }
     }
   </style>
@@ -1664,6 +1904,8 @@
           <h2 class="section-title-sm">Precision Begins Beneath the Surface.</h2>
         </div>
 
+        <div class="mobile-swipe-hint"><span>Swipe pillars</span> →</div>
+
         <!-- 3 Horizontal Pillars Dock -->
         <div class="pillars-horizontal-dock interactive-wrap" id="pillars-container">
           <!-- Pillar 1 -->
@@ -1732,33 +1974,37 @@
             <h2 class="section-title-sm">From Observation to Insight.</h2>
           </div>
 
-          <!-- Step 1 -->
-          <div class="step-card-compact">
-            <span class="step-badge-pill">STEP 01</span>
-            <div>
-              <h3 class="step-info-title">Observe</h3>
-              <p class="step-info-desc">Bring the subject into view through the high-aperture optical system with
-                illuminated guidance.</p>
-            </div>
-          </div>
+          <div class="mobile-swipe-hint"><span>Swipe steps</span> →</div>
 
-          <!-- Step 2 -->
-          <div class="step-card-compact">
-            <span class="step-badge-pill">STEP 02</span>
-            <div>
-              <h3 class="step-info-title">Capture</h3>
-              <p class="step-info-desc">Use the multi-lens optical assembly to capture sub-surface information the
-                system reveals.</p>
+          <div class="process-steps-dock">
+            <!-- Step 1 -->
+            <div class="step-card-compact">
+              <span class="step-badge-pill">STEP 01</span>
+              <div>
+                <h3 class="step-info-title">Observe</h3>
+                <p class="step-info-desc">Bring the subject into view through the high-aperture optical system with
+                  illuminated guidance.</p>
+              </div>
             </div>
-          </div>
 
-          <!-- Step 3 -->
-          <div class="step-card-compact">
-            <span class="step-badge-pill">STEP 03</span>
-            <div>
-              <h3 class="step-info-title">Interpret</h3>
-              <p class="step-info-desc">Turn captured optical information into meaningful analytical output for clinical
-                applications.</p>
+            <!-- Step 2 -->
+            <div class="step-card-compact">
+              <span class="step-badge-pill">STEP 02</span>
+              <div>
+                <h3 class="step-info-title">Capture</h3>
+                <p class="step-info-desc">Use the multi-lens optical assembly to capture sub-surface information the
+                  system reveals.</p>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-card-compact">
+              <span class="step-badge-pill">STEP 03</span>
+              <div>
+                <h3 class="step-info-title">Interpret</h3>
+                <p class="step-info-desc">Turn captured optical information into meaningful analytical output for clinical
+                  applications.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -1778,6 +2024,8 @@
           </div>
           <h2 class="section-title-sm">Technology Shaped Around Purpose.</h2>
         </div>
+
+        <div class="mobile-swipe-hint"><span>Swipe areas</span> →</div>
 
         <div class="app-cards-dock interactive-wrap">
           <div class="app-card-clean">
@@ -2199,13 +2447,36 @@
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        const scale = Math.max(cw / SOURCE_WIDTH, ch / SOURCE_HEIGHT);
-        const drawWidth = Math.round(SOURCE_WIDTH * scale);
-        const drawHeight = Math.round(SOURCE_HEIGHT * scale);
-        const drawX = Math.round((cw - drawWidth) / 2);
-        const drawY = Math.round((ch - drawHeight) / 2);
+        // Detect mobile portrait viewport (phones & portrait tablets)
+        const isMobilePortrait = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
 
-        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        if (isMobilePortrait) {
+          // 1. Fill solid studio cream background to seamlessly blend canvas margins
+          ctx.fillStyle = '#f6f5f0';
+          ctx.fillRect(0, 0, cw, ch);
+
+          // 2. Scale 16:9 width so 100% of the camera hardware and exploded lenses are visible
+          // A 1.14 scale spans phone width edge-to-edge without cutting off any hardware
+          const scale = (cw / SOURCE_WIDTH) * 1.14;
+          const drawWidth = Math.round(SOURCE_WIDTH * scale);
+          const drawHeight = Math.round(SOURCE_HEIGHT * scale);
+          const drawX = Math.round((cw - drawWidth) / 2);
+
+          // 3. Position vertically in the upper gallery zone (top ~12% to ~44% of mobile screen)
+          // Leaving the bottom 55% completely open for docked obsidian glass cards!
+          const drawY = Math.round(ch * 0.125);
+
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        } else {
+          // Desktop & Laptop: 100% UNTOUCHED
+          const scale = Math.max(cw / SOURCE_WIDTH, ch / SOURCE_HEIGHT);
+          const drawWidth = Math.round(SOURCE_WIDTH * scale);
+          const drawHeight = Math.round(SOURCE_HEIGHT * scale);
+          const drawX = Math.round((cw - drawWidth) / 2);
+          const drawY = Math.round((ch - drawHeight) / 2);
+
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        }
       }
 
       function updateScroll() {
