@@ -1383,11 +1383,29 @@
        - Lower 55% Viewport: Docked Smoked Obsidian Glass cards & horizontal snap carousels
        Laptop & desktop layouts (width > 768px) remain 100% untouched.
        ========================================================================== */
+    /* ==========================================================================
+       MOBILE DEVICE SPECIFIC OPTIMIZATION (<= 768px)
+       Dual-tier split-stage layout:
+       - Zone 1 (Top 0-72px): Protected solid-to-transparent Alabaster header bar (AETHER + controls)
+       - Zone 2 (72px-52vh): Dedicated 3D hardware canvas with feathered top/bottom edges
+       - Zone 3 (48vh-100vh): Story cards & horizontal snap carousels with smooth split-stage fading
+       Laptop & desktop layouts (width > 768px) remain 100% untouched.
+       ========================================================================== */
     @media (max-width: 768px) {
-      /* 1. Header Navbar */
-      #navbar {
-        padding: 0 16px !important;
-        top: 14px !important;
+
+      /* 1. Top Header Protection Shield: prevents scrolling cards from crashing into AETHER & Menu buttons (00:06, 00:09, 00:13) */
+      header, nav, .navbar, .top-nav, #navbar {
+        top: 0 !important;
+        background: linear-gradient(
+          to bottom,
+          rgba(246, 245, 240, 0.98) 55%,
+          rgba(246, 245, 240, 0.75) 80%,
+          rgba(246, 245, 240, 0) 100%
+        ) !important;
+        padding-top: 14px !important;
+        padding-bottom: 22px !important;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
       }
 
       #navbar .nav-logo {
@@ -1397,7 +1415,8 @@
       }
 
       #navbar #nav-cta-btn {
-        display: none !important; /* Preserved inside mobile drawer to prevent navbar crowding */
+        display: none !important;
+        /* Preserved inside mobile drawer to prevent navbar crowding */
       }
 
       .audio-btn {
@@ -1410,11 +1429,62 @@
         height: 36px !important;
       }
 
-      /* 2. Container & Section Baseline */
-      #content-container,
-      .scroll-content-overlay,
-      main {
+      /* 2. Feather the 16:9 Canvas Top & Bottom Edges so there is ZERO harsh horizontal cutoff line (00:03, 00:05, 00:08, 00:10, 00:12) */
+      canvas, #hero-canvas, .canvas-container, .sticky-canvas-wrap {
+        height: 52vh !important;
+        object-fit: cover !important;
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          black 10%,
+          black 82%,
+          transparent 100%
+        ) !important;
+        mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          black 10%,
+          black 82%,
+          transparent 100%
+        ) !important;
+      }
+
+      /* 3. Protect Hero Text at 00:02 so the dark zooming lens doesn't clash with black body copy */
+      .hero-content, .hero-text, .hero-editorial, .hero-left-column, section:first-of-type .content {
+        background: linear-gradient(
+          to top,
+          rgba(246, 245, 240, 0.96) 75%,
+          rgba(246, 245, 240, 0.4) 95%,
+          transparent 100%
+        ) !important;
+        padding: 24px 18px 20px !important;
+        border-radius: 18px !important;
+      }
+
+      /* 4. Fade Out Scrolling Story Cards in the Upper Half so they don't block the camera or hit top navbar (00:04, 00:06, 00:09, 00:11, 00:13) */
+      .scroll-overlay, .story-track, .scrolly-content, #content-container, .scroll-content-overlay {
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          transparent 12%,
+          black 26%,
+          black 100%
+        );
+        mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          transparent 12%,
+          black 26%,
+          black 100%
+        );
         padding-bottom: 40vh !important;
+      }
+
+      /* Compact card padding slightly on mobile so the camera stays visible above each card */
+      .card, .story-card, .glass-card, [class*="card"], .glass-capsule-card, .pillar-glass-pill, .app-card-clean, .step-card-compact, .vision-card-dock, .design-dock-card, .research-dock-card {
+        padding: 20px 18px !important;
+        border-radius: 18px !important;
+        transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
       }
 
       section.site-section {
@@ -1429,7 +1499,7 @@
         margin-bottom: 0 !important;
       }
 
-      /* 3. Hero Section on Mobile */
+      /* Hero Layout on Mobile */
       #hero {
         justify-content: flex-end !important;
         padding-top: 80px !important;
@@ -1513,12 +1583,10 @@
         display: none !important;
       }
 
-      /* 4. Section 2: Vision Card */
+      /* Section 2: Vision Card */
       .vision-card-dock {
         max-width: 100% !important;
         width: 100% !important;
-        padding: 22px 18px !important;
-        border-radius: 22px !important;
       }
 
       .section-title-sm {
@@ -1541,7 +1609,7 @@
         font-size: 0.9rem !important;
       }
 
-      /* 5. Floating Obsidian Header Bars */
+      /* Floating Obsidian Header Bars */
       .tech-header-compact,
       .section-header-floating,
       .chapter-heading-wrap {
@@ -1550,9 +1618,10 @@
         padding: 16px 18px !important;
         border-radius: 18px !important;
         margin-bottom: 10px !important;
+        transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
       }
 
-      /* 6. Section 3 (Technology), Section 4 (Process), Section 5 (Applications) Horizontal Snap Decks */
+      /* Horizontal Snap Decks */
       .pillars-horizontal-dock,
       .app-cards-dock,
       .process-steps-dock {
@@ -1580,9 +1649,7 @@
         max-width: 85vw !important;
         scroll-snap-align: center !important;
         flex-shrink: 0 !important;
-        padding: 18px 18px !important;
         min-height: 150px !important;
-        border-radius: 20px !important;
       }
 
       .pillar-name,
@@ -1602,24 +1669,15 @@
         width: 100% !important;
       }
 
-      /* 7. Section 6: Design Card */
-      .design-dock-card {
-        max-width: 100% !important;
-        width: 100% !important;
-        padding: 22px 18px !important;
-        border-radius: 22px !important;
-      }
-
-      /* 8. Section 7: Research Card */
+      /* Section 6 & 7: Design & Research Cards */
+      .design-dock-card,
       .research-dock-card {
         max-width: 100% !important;
         width: 100% !important;
-        padding: 22px 18px !important;
-        border-radius: 22px !important;
         margin-left: 0 !important;
       }
 
-      /* 9. Section 8: Studio Contact Section */
+      /* Section 8: Studio Contact Section */
       #contact {
         padding: 70px 16px 50px !important;
       }
@@ -1646,7 +1704,8 @@
       .form-input,
       .form-textarea,
       .form-select {
-        font-size: 16px !important; /* Critical: Stops iOS Safari from auto-zooming */
+        font-size: 16px !important;
+        /* Critical: Stops iOS Safari from auto-zooming */
         padding: 12px 14px !important;
       }
 
@@ -1663,6 +1722,44 @@
         text-transform: uppercase !important;
         margin-bottom: 8px !important;
         padding-left: 2px !important;
+      }
+
+      /* 5. Fix Footer Links Clipping Off Right Screen Edge at 00:15 ("How It Works" / "Appli...") */
+      #footer .footer-top-row,
+      footer .footer-top-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 20px !important;
+      }
+
+      #footer .footer-nav-links,
+      footer nav,
+      footer ul,
+      footer .footer-links,
+      .footer-nav {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-start !important;
+        gap: 12px 20px !important;
+        width: 100% !important;
+        overflow: visible !important;
+        padding-left: 0 !important;
+        margin: 0 !important;
+        list-style: none !important;
+      }
+
+      #footer .footer-nav-link,
+      footer a {
+        white-space: nowrap !important;
+        font-size: 13px !important;
+        display: inline-block !important;
+      }
+
+      #footer .footer-bottom-row,
+      footer .footer-bottom-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 14px !important;
       }
     }
   </style>
@@ -2002,7 +2099,8 @@
               <span class="step-badge-pill">STEP 03</span>
               <div>
                 <h3 class="step-info-title">Interpret</h3>
-                <p class="step-info-desc">Turn captured optical information into meaningful analytical output for clinical
+                <p class="step-info-desc">Turn captured optical information into meaningful analytical output for
+                  clinical
                   applications.</p>
               </div>
             </div>
@@ -2422,7 +2520,8 @@
       function resizeCanvas() {
         const dpr = Math.max(window.devicePixelRatio || 1, 1);
         const displayWidth = window.innerWidth;
-        const displayHeight = window.innerHeight;
+        const isMobilePortrait = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
+        const displayHeight = isMobilePortrait ? Math.round(window.innerHeight * 0.52) : window.innerHeight;
 
         canvas.width = Math.round(displayWidth * dpr);
         canvas.height = Math.round(displayHeight * dpr);
@@ -2456,15 +2555,14 @@
           ctx.fillRect(0, 0, cw, ch);
 
           // 2. Scale 16:9 width so 100% of the camera hardware and exploded lenses are visible
-          // A 1.14 scale spans phone width edge-to-edge without cutting off any hardware
-          const scale = (cw / SOURCE_WIDTH) * 1.14;
+          // A 1.15 scale spans phone width edge-to-edge without cutting off any hardware
+          const scale = (cw / SOURCE_WIDTH) * 1.15;
           const drawWidth = Math.round(SOURCE_WIDTH * scale);
           const drawHeight = Math.round(SOURCE_HEIGHT * scale);
           const drawX = Math.round((cw - drawWidth) / 2);
 
-          // 3. Position vertically in the upper gallery zone (top ~12% to ~44% of mobile screen)
-          // Leaving the bottom 55% completely open for docked obsidian glass cards!
-          const drawY = Math.round(ch * 0.125);
+          // 3. Position vertically centered in Zone 2 (52vh dedicated hardware stage)
+          const drawY = Math.round((ch - drawHeight) / 2);
 
           ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         } else {
@@ -2487,8 +2585,45 @@
         if (animEndScroll <= 0) return;
 
         const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-        const fraction = Math.max(0, Math.min(1, scrollY / animEndScroll));
-        targetFrame = fraction * (TOTAL_FRAMES - 1);
+        const isMobile = window.innerWidth <= 768;
+
+        // Flaw 3 Fix: Mobile Scroll Deadband (140px)
+        // Keeps targetFrame locked at Frame 0 while hero text scrolls away, preventing macro lens clash
+        const scrollDeadband = isMobile ? 140 : 0;
+        if (scrollY <= scrollDeadband) {
+          targetFrame = 0;
+        } else {
+          const effectiveScroll = scrollY - scrollDeadband;
+          const effectiveMax = Math.max(1, animEndScroll - scrollDeadband);
+          const fraction = Math.max(0, Math.min(1, effectiveScroll / effectiveMax));
+          targetFrame = fraction * (TOTAL_FRAMES - 1);
+        }
+
+        // Flaw 2 Fix: Smooth Split-Stage card fade when scrolling above 46vh on mobile
+        if (isMobile) {
+          const storyCards = document.querySelectorAll('#content-container .glass-capsule-card, #content-container .pillar-glass-pill, #content-container .app-card-clean, #content-container .step-card-compact, #content-container .tech-header-compact, #content-container .section-header-floating');
+          const fadeThreshold = window.innerHeight * 0.46;
+          const fadeDistance = window.innerHeight * 0.20;
+          storyCards.forEach((card) => {
+            const rect = card.getBoundingClientRect();
+            if (rect.top < fadeThreshold) {
+              const dist = fadeThreshold - rect.top;
+              const op = Math.max(0, 1 - (dist / fadeDistance));
+              card.style.opacity = op.toFixed(2);
+              card.style.visibility = op <= 0.02 ? 'hidden' : 'visible';
+            } else {
+              card.style.opacity = '1';
+              card.style.visibility = 'visible';
+            }
+          });
+        } else {
+          // Reset inline styles on desktop if resized
+          const storyCards = document.querySelectorAll('#content-container .glass-capsule-card, #content-container .pillar-glass-pill, #content-container .app-card-clean, #content-container .step-card-compact, #content-container .tech-header-compact, #content-container .section-header-floating');
+          storyCards.forEach((card) => {
+            if (card.style.opacity) card.style.opacity = '';
+            if (card.style.visibility) card.style.visibility = '';
+          });
+        }
 
         // Active Section ScrollSpy
         updateScrollSpy(scrollY);

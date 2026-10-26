@@ -34,7 +34,8 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
     const resizeCanvas = () => {
       const dpr = Math.max(window.devicePixelRatio || 1, 1);
       const displayWidth = window.innerWidth;
-      const displayHeight = window.innerHeight;
+      const isMobilePortrait = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
+      const displayHeight = isMobilePortrait ? Math.round(window.innerHeight * 0.52) : window.innerHeight;
 
       canvas.width = Math.round(displayWidth * dpr);
       canvas.height = Math.round(displayHeight * dpr);
@@ -66,13 +67,13 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
         ctx.fillRect(0, 0, cw, ch);
 
         // 2. Scale 16:9 width so 100% of the camera hardware and exploded lenses are visible
-        const scale = (cw / sourceWidth) * 1.14;
+        const scale = (cw / sourceWidth) * 1.15;
         const drawWidth = Math.round(sourceWidth * scale);
         const drawHeight = Math.round(sourceHeight * scale);
         const drawX = Math.round((cw - drawWidth) / 2);
 
-        // 3. Position vertically in the upper gallery zone (top ~12.5% of mobile screen)
-        const drawY = Math.round(ch * 0.125);
+        // 3. Position vertically centered in Zone 2 (52vh dedicated hardware stage)
+        const drawY = Math.round((ch - drawHeight) / 2);
 
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
       } else {
@@ -95,8 +96,18 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       if (maxScroll <= 0) return;
 
       const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-      const fraction = Math.max(0, Math.min(1, scrollY / maxScroll));
-      targetFrame = fraction * (totalFrames - 1);
+      const isMobile = window.innerWidth <= 768;
+
+      // Flaw 3 Fix: Mobile Scroll Deadband (140px)
+      const scrollDeadband = isMobile ? 140 : 0;
+      if (scrollY <= scrollDeadband) {
+        targetFrame = 0;
+      } else {
+        const effectiveScroll = scrollY - scrollDeadband;
+        const effectiveMax = Math.max(1, maxScroll - scrollDeadband);
+        const fraction = Math.max(0, Math.min(1, effectiveScroll / effectiveMax));
+        targetFrame = fraction * (totalFrames - 1);
+      }
     };
 
     const animationLoop = () => {

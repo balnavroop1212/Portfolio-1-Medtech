@@ -38,7 +38,7 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex flex-wrap items-center gap-6 sm:gap-8 text-xs font-mono uppercase tracking-[0.16em] text-white/80">
+          <nav className="flex flex-wrap items-center gap-4 sm:gap-8 text-xs font-mono uppercase tracking-[0.16em] text-white/80">
             {navLinks.map((link) => (
               <a
                 key={link.label}
@@ -47,7 +47,7 @@ export const Footer: React.FC = () => {
                   e.preventDefault();
                   scrollTo(link.href);
                 }}
-                className="hover:text-white transition-colors"
+                className="whitespace-nowrap hover:text-white transition-colors"
               >
                 {link.label}
               </a>
