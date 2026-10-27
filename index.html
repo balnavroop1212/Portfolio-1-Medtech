@@ -959,6 +959,191 @@
     }
 
     /* ==========================================================================
+       SCROLL-TRIGGERED REVEAL & DYNAMIC COMPONENT ANIMATIONS
+       ========================================================================== */
+    .reveal-init {
+      opacity: 0;
+      transform: translateY(28px);
+      filter: blur(4px);
+      transition:
+        opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform, filter;
+    }
+
+    .reveal-left {
+      opacity: 0;
+      transform: translateX(-32px);
+      filter: blur(4px);
+      transition:
+        opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform, filter;
+    }
+
+    .reveal-right {
+      opacity: 0;
+      transform: translateX(32px);
+      filter: blur(4px);
+      transition:
+        opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform, filter;
+    }
+
+    .reveal-scale {
+      opacity: 0;
+      transform: scale(0.94) translateY(20px);
+      filter: blur(5px);
+      transition:
+        opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform, filter;
+    }
+
+    /* Active Revealed State */
+    .is-revealed {
+      opacity: 1 !important;
+      transform: translateY(0) translateX(0) scale(1) !important;
+      filter: blur(0) !important;
+    }
+
+    /* Stagger Delays */
+    .delay-100 { transition-delay: 100ms !important; }
+    .delay-150 { transition-delay: 150ms !important; }
+    .delay-200 { transition-delay: 200ms !important; }
+    .delay-250 { transition-delay: 250ms !important; }
+    .delay-300 { transition-delay: 300ms !important; }
+    .delay-350 { transition-delay: 350ms !important; }
+    .delay-400 { transition-delay: 400ms !important; }
+    .delay-500 { transition-delay: 500ms !important; }
+
+    /* Dynamic Card Light Sheen */
+    .pillar-glass-pill,
+    .step-card-compact,
+    .app-card-clean,
+    .vision-card-dock,
+    .design-dock-card,
+    .research-dock-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pillar-glass-pill::before,
+    .step-card-compact::before,
+    .app-card-clean::before,
+    .vision-card-dock::before,
+    .design-dock-card::before,
+    .research-dock-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -160%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+      );
+      transform: skewX(-25deg);
+      transition: left 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .pillar-glass-pill:hover::before,
+    .step-card-compact:hover::before,
+    .app-card-clean:hover::before,
+    .vision-card-dock:hover::before,
+    .design-dock-card:hover::before,
+    .research-dock-card:hover::before {
+      left: 160%;
+    }
+
+    /* Section 4: Dynamic Active Step Highlighting on Scroll */
+    .step-card-compact {
+      border-left: 2px solid transparent !important;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .step-card-compact.step-active {
+      border-left-color: var(--amber-optical) !important;
+      background: linear-gradient(145deg,
+          rgba(26, 28, 36, 0.96) 0%,
+          rgba(36, 32, 28, 0.9) 100%) !important;
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.4),
+        0 24px 60px rgba(0, 0, 0, 0.65),
+        0 0 30px rgba(242, 160, 68, 0.28) !important;
+      transform: translateX(8px);
+    }
+
+    .step-card-compact.step-active .step-badge-pill {
+      background: var(--amber-optical) !important;
+      color: #111215 !important;
+      font-weight: 800 !important;
+      box-shadow: 0 0 14px var(--amber-optical);
+    }
+
+    /* Animated Radar Pulse Dot */
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--amber-optical);
+      position: relative;
+      display: inline-block;
+    }
+
+    .pulse-dot::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1.5px solid var(--amber-optical);
+      animation: radarPulse 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    @keyframes radarPulse {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2.8); opacity: 0; }
+    }
+
+    /* Telemetry Card Live Glow on Hover and Entry */
+    .telemetry-card {
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .telemetry-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      border-color: rgba(242, 160, 68, 0.4) !important;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 20px rgba(242, 160, 68, 0.15) !important;
+    }
+
+    /* Subtle Card Floating Breath */
+    @keyframes subtleFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .vision-card-dock.is-revealed,
+    .design-dock-card.is-revealed,
+    .research-dock-card.is-revealed {
+      animation: subtleFloat 6s ease-in-out infinite;
+    }
+
+    .vision-card-dock.is-revealed:hover,
+    .design-dock-card.is-revealed:hover,
+    .research-dock-card.is-revealed:hover {
+      animation-play-state: paused;
+    }
+
+    /* ==========================================================================
        SECTION 3: THE TECHNOLOGY (HORIZONTAL BOTTOM DOCK)
        ========================================================================== */
     #technology {
@@ -1910,7 +2095,7 @@
       <div class="section-stage hero-layout">
 
         <!-- Left Editorial Column with Rail -->
-        <div class="hero-left-column interactive-wrap">
+        <div class="hero-left-column interactive-wrap reveal-left">
           <div class="hero-rail-ruler">
             <div class="ruler-tick"></div>
             <div class="ruler-marker"></div>
@@ -1920,22 +2105,23 @@
           </div>
 
           <div class="hero-editorial">
-            <div class="hero-eyebrow">
+            <div class="hero-eyebrow reveal-init delay-100">
+              <span class="pulse-dot"></span>
               <span>OPTICAL PRECISION STUDIO</span>
             </div>
 
-            <h1 class="hero-headline">
+            <h1 class="hero-headline reveal-init delay-200">
               See Beyond.<br>
               Beautifully<br>
               engineered.
             </h1>
 
-            <p class="hero-subhead">
+            <p class="hero-subhead reveal-init delay-300">
               A new perspective on optical technology. Designed with precision, built to look closer, and created to
               explore what lies beyond the surface.
             </p>
 
-            <div class="hero-cta-group">
+            <div class="hero-cta-group reveal-init delay-400">
               <a href="#technology" class="btn-hero-primary" id="hero-btn-explore">
                 <span>Explore the Technology</span>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -1959,7 +2145,7 @@
 
         <!-- Right Margin Floating Telemetry Pills (Clear of camera center) -->
         <div class="hero-right-telemetry interactive-wrap">
-          <div class="telemetry-card">
+          <div class="telemetry-card reveal-right delay-200">
             <div class="telemetry-header">
               <span>OPTICAL RESOLUTION</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1967,11 +2153,11 @@
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
             </div>
-            <div class="telemetry-value accent">0.18 µm</div>
+            <div class="telemetry-value accent" id="telemetry-res-val">0.18 µm</div>
             <div class="telemetry-sub">Multi-lens concentric</div>
           </div>
 
-          <div class="telemetry-card">
+          <div class="telemetry-card reveal-right delay-350">
             <div class="telemetry-header">
               <span>ILLUMINATION</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1980,7 +2166,7 @@
                 </path>
               </svg>
             </div>
-            <div class="telemetry-value">590 nm</div>
+            <div class="telemetry-value" id="telemetry-ill-val">590 nm</div>
             <div class="telemetry-sub">Amber optical halo</div>
           </div>
         </div>
@@ -1988,7 +2174,7 @@
       </div>
 
       <!-- Bottom Status & Scroll Prompt -->
-      <div class="section-stage hero-bottom-strip interactive-wrap">
+      <div class="section-stage hero-bottom-strip interactive-wrap reveal-init delay-500">
         <span class="hero-tag-rail">• AETHER-01 · PRECISION ENGINEERING</span>
         <button class="scroll-down-capsule" id="scroll-prompt-btn" aria-label="Scroll to explore">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -2007,17 +2193,17 @@
          ───────────────────────────────────────────────────────────── -->
     <section id="vision" class="site-section">
       <div class="section-stage">
-        <div class="glass-capsule-card vision-card-dock interactive-wrap">
-          <div class="section-eyebrow">
+        <div class="glass-capsule-card vision-card-dock interactive-wrap reveal-scale">
+          <div class="section-eyebrow reveal-init delay-100">
             <span class="pulse-dot"></span>
             <span>OUR VISION · 02</span>
           </div>
-          <h2 class="section-title-sm">A Different Way of Seeing.</h2>
-          <p class="section-body">
+          <h2 class="section-title-sm reveal-init delay-200">A Different Way of Seeing.</h2>
+          <p class="section-body reveal-init delay-300">
             We believe meaningful discoveries begin with a closer look. AETHER brings thoughtful design and optical
             engineering together to explore new perspectives through technology.
           </p>
-          <div class="vision-quote-box">
+          <div class="vision-quote-box reveal-init delay-400">
             <p class="vision-quote-text">“Better questions begin with a clearer view.”</p>
           </div>
         </div>
@@ -2032,8 +2218,9 @@
          ───────────────────────────────────────────────────────────── -->
     <section id="technology" class="site-section">
       <div class="section-stage">
-        <div class="tech-header-compact interactive-wrap">
+        <div class="tech-header-compact interactive-wrap reveal-init">
           <div class="section-eyebrow">
+            <span class="pulse-dot"></span>
             <span>THE TECHNOLOGY · 03</span>
           </div>
           <h2 class="section-title-sm">Precision Begins Beneath the Surface.</h2>
@@ -2044,7 +2231,7 @@
         <!-- 3 Horizontal Pillars Dock -->
         <div class="pillars-horizontal-dock interactive-wrap" id="pillars-container">
           <!-- Pillar 1 -->
-          <div class="pillar-glass-pill active" data-pillar="optical">
+          <div class="pillar-glass-pill active reveal-init delay-100" data-pillar="optical">
             <div class="pillar-top-row">
               <span class="pillar-num">PILLAR 01</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2060,7 +2247,7 @@
           </div>
 
           <!-- Pillar 2 -->
-          <div class="pillar-glass-pill" data-pillar="precision">
+          <div class="pillar-glass-pill reveal-init delay-250" data-pillar="precision">
             <div class="pillar-top-row">
               <span class="pillar-num">PILLAR 02</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2076,7 +2263,7 @@
           </div>
 
           <!-- Pillar 3 -->
-          <div class="pillar-glass-pill" data-pillar="design">
+          <div class="pillar-glass-pill reveal-init delay-400" data-pillar="design">
             <div class="pillar-top-row">
               <span class="pillar-num">PILLAR 03</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2102,8 +2289,9 @@
     <section id="process" class="site-section">
       <div class="section-stage">
         <div class="process-left-flow interactive-wrap">
-          <div class="tech-header-compact interactive-wrap" style="margin-bottom: 8px;">
+          <div class="tech-header-compact interactive-wrap reveal-init" style="margin-bottom: 8px;">
             <div class="section-eyebrow">
+              <span class="pulse-dot"></span>
               <span>HOW IT WORKS · 04</span>
             </div>
             <h2 class="section-title-sm">From Observation to Insight.</h2>
@@ -2113,7 +2301,7 @@
 
           <div class="process-steps-dock">
             <!-- Step 1 -->
-            <div class="step-card-compact">
+            <div class="step-card-compact reveal-left delay-100" id="process-step-1">
               <span class="step-badge-pill">STEP 01</span>
               <div>
                 <h3 class="step-info-title">Observe</h3>
@@ -2123,7 +2311,7 @@
             </div>
 
             <!-- Step 2 -->
-            <div class="step-card-compact">
+            <div class="step-card-compact reveal-left delay-250" id="process-step-2">
               <span class="step-badge-pill">STEP 02</span>
               <div>
                 <h3 class="step-info-title">Capture</h3>
@@ -2133,7 +2321,7 @@
             </div>
 
             <!-- Step 3 -->
-            <div class="step-card-compact">
+            <div class="step-card-compact reveal-left delay-400" id="process-step-3">
               <span class="step-badge-pill">STEP 03</span>
               <div>
                 <h3 class="step-info-title">Interpret</h3>
@@ -2154,8 +2342,9 @@
          ───────────────────────────────────────────────────────────── -->
     <section id="applications" class="site-section">
       <div class="section-stage">
-        <div class="tech-header-compact interactive-wrap">
+        <div class="tech-header-compact interactive-wrap reveal-init">
           <div class="section-eyebrow">
+            <span class="pulse-dot"></span>
             <span>APPLICATIONS · 05</span>
           </div>
           <h2 class="section-title-sm">Technology Shaped Around Purpose.</h2>
@@ -2164,7 +2353,7 @@
         <div class="mobile-swipe-hint"><span>Swipe areas</span> →</div>
 
         <div class="app-cards-dock interactive-wrap">
-          <div class="app-card-clean">
+          <div class="app-card-clean reveal-init delay-100">
             <div>
               <span class="pillar-num">AREA 01</span>
               <h3 class="pillar-name" style="margin-top: 8px;">Clinical Assessment</h3>
@@ -2177,7 +2366,7 @@
             </a>
           </div>
 
-          <div class="app-card-clean">
+          <div class="app-card-clean reveal-init delay-250">
             <div>
               <span class="pillar-num">AREA 02</span>
               <h3 class="pillar-name" style="margin-top: 8px;">Research & Exploration</h3>
@@ -2190,7 +2379,7 @@
             </a>
           </div>
 
-          <div class="app-card-clean">
+          <div class="app-card-clean reveal-init delay-400">
             <div>
               <span class="pillar-num">AREA 03</span>
               <h3 class="pillar-name" style="margin-top: 8px;">Professional Workflows</h3>
@@ -2214,16 +2403,17 @@
          ───────────────────────────────────────────────────────────── -->
     <section id="design" class="site-section">
       <div class="section-stage">
-        <div class="glass-capsule-card design-dock-card interactive-wrap">
-          <div class="section-eyebrow">
+        <div class="glass-capsule-card design-dock-card interactive-wrap reveal-left">
+          <div class="section-eyebrow reveal-init delay-100">
+            <span class="pulse-dot"></span>
             <span>DESIGN & ENGINEERING · 06</span>
           </div>
-          <h2 class="section-title-sm">Every Detail Has a Reason.</h2>
-          <p class="section-body">
+          <h2 class="section-title-sm reveal-init delay-200">Every Detail Has a Reason.</h2>
+          <p class="section-body reveal-init delay-300">
             From the refined exterior to the illuminated optical assembly, AETHER-01 brings together distinctive product
             design and a precision-focused engineering philosophy.
           </p>
-          <div class="vision-quote-box">
+          <div class="vision-quote-box reveal-init delay-400">
             <p class="vision-quote-text">“Purposeful in form. Precise in detail.”</p>
           </div>
         </div>
@@ -2237,17 +2427,17 @@
          ───────────────────────────────────────────────────────────── -->
     <section id="research" class="site-section">
       <div class="section-stage">
-        <div class="glass-capsule-card research-dock-card interactive-wrap">
-          <div class="section-eyebrow">
+        <div class="glass-capsule-card research-dock-card interactive-wrap reveal-right">
+          <div class="section-eyebrow reveal-init delay-100">
             <span class="pulse-dot"></span>
             <span>RESEARCH &amp; VALIDATION · 07</span>
           </div>
-          <h2 class="section-title-sm">Innovation Deserves Clarity.</h2>
-          <p class="section-body">
+          <h2 class="section-title-sm reveal-init delay-200">Innovation Deserves Clarity.</h2>
+          <p class="section-body reveal-init delay-300">
             We believe meaningful technology is supported by transparent development, responsible research, and rigorous
             evidence appropriate to its intended use.
           </p>
-          <div style="margin-top: 10px;">
+          <div style="margin-top: 10px;" class="reveal-init delay-400">
             <a href="#contact" class="btn-hero-primary">
               <span>Discuss the Technology</span>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -2271,8 +2461,9 @@
   <section id="contact">
     <div class="contact-layout-studio">
       <!-- Left: Big Editorial & Details -->
-      <div class="contact-info-column">
+      <div class="contact-info-column reveal-left">
         <div class="section-eyebrow">
+          <span class="pulse-dot"></span>
           <span>CONTACT · 08</span>
         </div>
 
@@ -2296,7 +2487,7 @@
       </div>
 
       <!-- Right: Pure White Studio Form Card -->
-      <div class="contact-form-studio-card">
+      <div class="contact-form-studio-card reveal-right delay-200">
         <form id="contact-form">
           <div class="form-row">
             <div class="form-group">
@@ -2635,6 +2826,66 @@
         // Dynamically prioritize frames in the direction of scrolling
         pumpStreamQueue();
 
+        // 1. Hero Architectural Rail Marker Dynamic Progress
+        const heroEl = document.getElementById('hero');
+        if (heroEl) {
+          const rulerMarker = heroEl.querySelector('.ruler-marker');
+          if (rulerMarker) {
+            const heroHeight = heroEl.offsetHeight || window.innerHeight;
+            const heroProgress = Math.max(0, Math.min(1, scrollY / (heroHeight * 0.8)));
+            rulerMarker.style.transform = `translateY(${heroProgress * 64}px)`;
+          }
+        }
+
+        // 2. Section 3: Technology Pillars Sync on Scroll
+        const techEl = document.getElementById('technology');
+        if (techEl) {
+          const tTop = techEl.offsetTop;
+          const tHeight = techEl.offsetHeight;
+          const relT = scrollY + window.innerHeight * 0.5 - tTop;
+          const tFraction = relT / (tHeight || 1);
+          if (tFraction >= 0 && tFraction <= 1.05) {
+            const pillars = document.querySelectorAll('.pillar-glass-pill');
+            if (pillars.length === 3) {
+              pillars.forEach(p => p.classList.remove('active'));
+              if (tFraction < 0.38) {
+                pillars[0].classList.add('active');
+              } else if (tFraction < 0.72) {
+                pillars[1].classList.add('active');
+              } else {
+                pillars[2].classList.add('active');
+              }
+            }
+          }
+        }
+
+        // 3. Section 4: Process Step Highlighting on Scroll
+        const processEl = document.getElementById('process');
+        if (processEl) {
+          const pTop = processEl.offsetTop;
+          const pHeight = processEl.offsetHeight;
+          const step1 = document.getElementById('process-step-1');
+          const step2 = document.getElementById('process-step-2');
+          const step3 = document.getElementById('process-step-3');
+
+          if (step1 && step2 && step3) {
+            const relP = scrollY + window.innerHeight * 0.5 - pTop;
+            const pFraction = relP / (pHeight || 1);
+
+            step1.classList.remove('step-active');
+            step2.classList.remove('step-active');
+            step3.classList.remove('step-active');
+
+            if (pFraction >= 0.05 && pFraction < 0.38) {
+              step1.classList.add('step-active');
+            } else if (pFraction >= 0.38 && pFraction < 0.72) {
+              step2.classList.add('step-active');
+            } else if (pFraction >= 0.72 && pFraction <= 1.1) {
+              step3.classList.add('step-active');
+            }
+          }
+        }
+
         // Mobile Curtain Safety: Ensure canvas hides completely once contact section covers it
         const isMobile = window.innerWidth <= 768;
         if (contactSection && isMobile) {
@@ -2813,6 +3064,15 @@
         lastRenderedFrame = -1;
         renderFrame(Math.round(currentFrame));
 
+        // Reveal Hero elements immediately on load
+        const hero = document.getElementById('hero');
+        if (hero) {
+          hero.querySelectorAll('.reveal-init, .reveal-left, .reveal-right, .reveal-scale').forEach((el) => {
+            el.classList.add('is-revealed');
+          });
+        }
+        animateHeroTelemetry();
+
         requestAnimationFrame(animationLoop);
       }
 
@@ -2891,6 +3151,116 @@
           card.classList.add('active');
         });
       });
+
+
+      // ─────────────────────────────────────────────────────────────
+      // 4b. INTERACTIVE PROCESS STEP CARDS
+      // ─────────────────────────────────────────────────────────────
+      const stepCards = document.querySelectorAll('.step-card-compact');
+      stepCards.forEach((card) => {
+        card.addEventListener('click', () => {
+          stepCards.forEach((c) => c.classList.remove('step-active'));
+          card.classList.add('step-active');
+          audioEngine.playClick();
+        });
+      });
+
+
+      // ─────────────────────────────────────────────────────────────
+      // 4c. SCROLL REVEAL OBSERVER & TELEMETRY LIVE ANIMATIONS
+      // ─────────────────────────────────────────────────────────────
+      function animateHeroTelemetry() {
+        const resEl = document.getElementById('telemetry-res-val');
+        const illEl = document.getElementById('telemetry-ill-val');
+
+        if (resEl) {
+          const target = 0.18;
+          const duration = 1400;
+          const startTime = performance.now();
+          function stepRes(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3);
+            const val = (target * ease).toFixed(2);
+            resEl.textContent = `${val} µm`;
+            if (progress < 1) {
+              requestAnimationFrame(stepRes);
+            } else {
+              resEl.textContent = '0.18 µm';
+            }
+          }
+          requestAnimationFrame(stepRes);
+        }
+
+        if (illEl) {
+          const start = 420;
+          const target = 590;
+          const duration = 1600;
+          const startTime = performance.now();
+          function stepIll(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3);
+            const val = Math.round(start + (target - start) * ease);
+            illEl.textContent = `${val} nm`;
+            if (progress < 1) {
+              requestAnimationFrame(stepIll);
+            } else {
+              illEl.textContent = '590 nm';
+            }
+          }
+          requestAnimationFrame(stepIll);
+        }
+      }
+
+      // IntersectionObserver for elements as user scrolls to each section
+      const revealTargets = document.querySelectorAll('.reveal-init, .reveal-left, .reveal-right, .reveal-scale');
+      if ('IntersectionObserver' in window) {
+        const revealObserver = new IntersectionObserver(
+          (entries, observer) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-revealed');
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          {
+            rootMargin: '0px 0px -40px 0px',
+            threshold: 0.12,
+          }
+        );
+
+        revealTargets.forEach((el) => {
+          if (!el.closest('#hero')) {
+            revealObserver.observe(el);
+          }
+        });
+      } else {
+        revealTargets.forEach((el) => el.classList.add('is-revealed'));
+      }
+
+      // Tactile 3D Micro-tilt on cards for desktop/pointer devices
+      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        const interactiveCards = document.querySelectorAll(
+          '.glass-capsule-card, .telemetry-card, .step-card-compact, .app-card-clean, .pillar-glass-pill'
+        );
+        interactiveCards.forEach((card) => {
+          card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = ((y - centerY) / centerY) * -3.5;
+            const rotateY = ((x - centerX) / centerX) * 3.5;
+            card.style.transform = `perspective(800px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-2px)`;
+          });
+          card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+          });
+        });
+      }
 
 
       // ─────────────────────────────────────────────────────────────
