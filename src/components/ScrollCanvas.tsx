@@ -33,9 +33,9 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
 
     const resizeCanvas = () => {
       const dpr = Math.max(window.devicePixelRatio || 1, 1);
-      const displayWidth = window.innerWidth;
       const isMobilePortrait = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
-      const displayHeight = isMobilePortrait ? Math.round(window.innerHeight * 0.52) : window.innerHeight;
+      const displayWidth = isMobilePortrait ? Math.max(1, canvas.clientWidth || (window.innerWidth - 24)) : window.innerWidth;
+      const displayHeight = isMobilePortrait ? Math.max(1, canvas.clientHeight || Math.round(window.innerHeight * 0.44 - 78)) : window.innerHeight;
 
       canvas.width = Math.round(displayWidth * dpr);
       canvas.height = Math.round(displayHeight * dpr);
@@ -58,34 +58,13 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
-      // Detect mobile portrait viewport (phones & portrait tablets)
-      const isMobilePortrait = window.innerWidth <= 768 && window.innerHeight > window.innerWidth;
+      const scale = Math.max(cw / sourceWidth, ch / sourceHeight);
+      const drawWidth = Math.round(sourceWidth * scale);
+      const drawHeight = Math.round(sourceHeight * scale);
+      const drawX = Math.round((cw - drawWidth) / 2);
+      const drawY = Math.round((ch - drawHeight) / 2);
 
-      if (isMobilePortrait) {
-        // 1. Fill solid studio cream background to seamlessly blend canvas margins
-        ctx.fillStyle = '#f6f5f0';
-        ctx.fillRect(0, 0, cw, ch);
-
-        // 2. Scale 16:9 width so 100% of the camera hardware and exploded lenses are visible
-        const scale = (cw / sourceWidth) * 1.15;
-        const drawWidth = Math.round(sourceWidth * scale);
-        const drawHeight = Math.round(sourceHeight * scale);
-        const drawX = Math.round((cw - drawWidth) / 2);
-
-        // 3. Position vertically centered in Zone 2 (52vh dedicated hardware stage)
-        const drawY = Math.round((ch - drawHeight) / 2);
-
-        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-      } else {
-        // Desktop & Laptop: 100% UNTOUCHED
-        const scale = Math.max(cw / sourceWidth, ch / sourceHeight);
-        const drawWidth = Math.round(sourceWidth * scale);
-        const drawHeight = Math.round(sourceHeight * scale);
-        const drawX = Math.round((cw - drawWidth) / 2);
-        const drawY = Math.round((ch - drawHeight) / 2);
-
-        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-      }
+      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
     };
 
     const updateScroll = () => {
@@ -96,18 +75,8 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       if (maxScroll <= 0) return;
 
       const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-      const isMobile = window.innerWidth <= 768;
-
-      // Flaw 3 Fix: Mobile Scroll Deadband (140px)
-      const scrollDeadband = isMobile ? 140 : 0;
-      if (scrollY <= scrollDeadband) {
-        targetFrame = 0;
-      } else {
-        const effectiveScroll = scrollY - scrollDeadband;
-        const effectiveMax = Math.max(1, maxScroll - scrollDeadband);
-        const fraction = Math.max(0, Math.min(1, effectiveScroll / effectiveMax));
-        targetFrame = fraction * (totalFrames - 1);
-      }
+      const fraction = Math.max(0, Math.min(1, scrollY / maxScroll));
+      targetFrame = fraction * (totalFrames - 1);
     };
 
     const animationLoop = () => {
@@ -192,10 +161,13 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
         </div>
       )}
 
-      {/* Full Bleed Canvas Viewport */}
-      <div className="fixed inset-0 w-screen h-screen overflow-hidden pointer-events-none z-0">
-        <canvas ref={canvasRef} className="w-screen h-screen block" />
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(10,10,14,0.15)_0%,rgba(10,10,14,0.45)_75%,rgba(10,10,14,0.72)_100%)]" />
+      {/* Viewport Canvas Stage: Sticky 44vh Framed Stage on Mobile, Full-Bleed Fixed on Desktop */}
+      <div className="canvas-container sticky top-0 h-[44vh] w-screen z-30 bg-[#F6F5F0] p-[68px_12px_10px_12px] box-border shadow-[0_14px_20px_-4px_rgba(246,245,240,0.98)] md:fixed md:inset-0 md:h-screen md:w-screen md:z-0 md:bg-transparent md:p-0 md:shadow-none overflow-hidden pointer-events-none">
+        <canvas
+          ref={canvasRef}
+          id="hero-canvas"
+          className="w-full h-full block object-cover rounded-[18px] border border-black/10 shadow-[0_8px_24px_rgba(17,18,21,0.06)] scale-[1.06] md:w-screen md:h-screen md:rounded-none md:border-none md:shadow-none md:scale-100"
+        />
       </div>
     </>
   );
