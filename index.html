@@ -960,48 +960,49 @@
 
     /* ==========================================================================
        SCROLL-TRIGGERED REVEAL & DYNAMIC COMPONENT ANIMATIONS
+       Starts immediately when item enters at the bottom of the screen
        ========================================================================== */
     .reveal-init {
       opacity: 0;
-      transform: translateY(28px);
-      filter: blur(4px);
+      transform: translateY(18px);
+      filter: blur(2px);
       transition:
-        opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
-        filter 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: opacity, transform, filter;
     }
 
     .reveal-left {
       opacity: 0;
-      transform: translateX(-32px);
-      filter: blur(4px);
+      transform: translateX(-20px);
+      filter: blur(2px);
       transition:
-        opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-        filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: opacity, transform, filter;
     }
 
     .reveal-right {
       opacity: 0;
-      transform: translateX(32px);
-      filter: blur(4px);
+      transform: translateX(20px);
+      filter: blur(2px);
       transition:
-        opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-        filter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: opacity, transform, filter;
     }
 
     .reveal-scale {
       opacity: 0;
-      transform: scale(0.94) translateY(20px);
-      filter: blur(5px);
+      transform: scale(0.97) translateY(14px);
+      filter: blur(2px);
       transition:
-        opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-        filter 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: opacity, transform, filter;
     }
 
@@ -1012,15 +1013,15 @@
       filter: blur(0) !important;
     }
 
-    /* Stagger Delays */
-    .delay-100 { transition-delay: 100ms !important; }
-    .delay-150 { transition-delay: 150ms !important; }
-    .delay-200 { transition-delay: 200ms !important; }
-    .delay-250 { transition-delay: 250ms !important; }
-    .delay-300 { transition-delay: 300ms !important; }
-    .delay-350 { transition-delay: 350ms !important; }
-    .delay-400 { transition-delay: 400ms !important; }
-    .delay-500 { transition-delay: 500ms !important; }
+    /* Stagger Delays - Snappy & Responsive */
+    .delay-100 { transition-delay: 40ms !important; }
+    .delay-150 { transition-delay: 70ms !important; }
+    .delay-200 { transition-delay: 100ms !important; }
+    .delay-250 { transition-delay: 130ms !important; }
+    .delay-300 { transition-delay: 160ms !important; }
+    .delay-350 { transition-delay: 190ms !important; }
+    .delay-400 { transition-delay: 220ms !important; }
+    .delay-500 { transition-delay: 250ms !important; }
 
     /* Dynamic Card Light Sheen */
     .pillar-glass-pill,
@@ -2837,12 +2838,12 @@
           }
         }
 
-        // 2. Section 3: Technology Pillars Sync on Scroll
+        // 2. Section 3: Technology Pillars Sync on Scroll (triggers as section enters at bottom)
         const techEl = document.getElementById('technology');
         if (techEl) {
           const tTop = techEl.offsetTop;
           const tHeight = techEl.offsetHeight;
-          const relT = scrollY + window.innerHeight * 0.5 - tTop;
+          const relT = scrollY + window.innerHeight * 0.9 - tTop;
           const tFraction = relT / (tHeight || 1);
           if (tFraction >= 0 && tFraction <= 1.05) {
             const pillars = document.querySelectorAll('.pillar-glass-pill');
@@ -2859,7 +2860,7 @@
           }
         }
 
-        // 3. Section 4: Process Step Highlighting on Scroll
+        // 3. Section 4: Process Step Highlighting on Scroll (triggers as section enters at bottom)
         const processEl = document.getElementById('process');
         if (processEl) {
           const pTop = processEl.offsetTop;
@@ -2869,14 +2870,14 @@
           const step3 = document.getElementById('process-step-3');
 
           if (step1 && step2 && step3) {
-            const relP = scrollY + window.innerHeight * 0.5 - pTop;
+            const relP = scrollY + window.innerHeight * 0.9 - pTop;
             const pFraction = relP / (pHeight || 1);
 
             step1.classList.remove('step-active');
             step2.classList.remove('step-active');
             step3.classList.remove('step-active');
 
-            if (pFraction >= 0.05 && pFraction < 0.38) {
+            if (pFraction >= 0.02 && pFraction < 0.38) {
               step1.classList.add('step-active');
             } else if (pFraction >= 0.38 && pFraction < 0.72) {
               step2.classList.add('step-active');
@@ -2885,6 +2886,9 @@
             }
           }
         }
+
+        // Immediately reveal items as soon as they enter the bottom of screen
+        checkReveals();
 
         // Mobile Curtain Safety: Ensure canvas hides completely once contact section covers it
         const isMobile = window.innerWidth <= 768;
@@ -3213,21 +3217,48 @@
         }
       }
 
-      // IntersectionObserver for elements as user scrolls to each section
+      // ─────────────────────────────────────────────────────────────
+      // 4c. INSTANT BOTTOM-OF-SCREEN REVEAL ENGINE
+      // Fires immediately when an item enters at the bottom of the screen
+      // ─────────────────────────────────────────────────────────────
       const revealTargets = document.querySelectorAll('.reveal-init, .reveal-left, .reveal-right, .reveal-scale');
+
+      function revealElement(el) {
+        if (!el || el.classList.contains('is-revealed')) return;
+        el.classList.add('is-revealed');
+        // Instantly cascade to all nested children inside the card so inner text never lags or stays hidden
+        el.querySelectorAll('.reveal-init, .reveal-left, .reveal-right, .reveal-scale').forEach((child) => {
+          child.classList.add('is-revealed');
+        });
+      }
+
+      function checkReveals() {
+        // Trigger precisely as soon as top edge touches bottom of screen (window.innerHeight + 20px buffer)
+        const triggerPoint = window.innerHeight + 20;
+        revealTargets.forEach((el) => {
+          if (!el.classList.contains('is-revealed')) {
+            const rect = el.getBoundingClientRect();
+            if (rect.top <= triggerPoint) {
+              revealElement(el);
+            }
+          }
+        });
+      }
+
+      // IntersectionObserver configured to trigger the exact millisecond an element touches the bottom viewport edge
       if ('IntersectionObserver' in window) {
         const revealObserver = new IntersectionObserver(
           (entries, observer) => {
             entries.forEach((entry) => {
               if (entry.isIntersecting) {
-                entry.target.classList.add('is-revealed');
+                revealElement(entry.target);
                 observer.unobserve(entry.target);
               }
             });
           },
           {
-            rootMargin: '0px 0px -40px 0px',
-            threshold: 0.12,
+            rootMargin: '0px 0px 40px 0px',
+            threshold: 0,
           }
         );
 
@@ -3237,7 +3268,7 @@
           }
         });
       } else {
-        revealTargets.forEach((el) => el.classList.add('is-revealed'));
+        revealTargets.forEach((el) => revealElement(el));
       }
 
       // Tactile 3D Micro-tilt on cards for desktop/pointer devices
