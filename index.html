@@ -16,7 +16,7 @@
     rel="stylesheet">
 
   <!-- Instant Preload of Initial Hardware Frame -->
-  <link rel="preload" as="image" href="./Assets/frames/frame_000020.jpg" fetchpriority="high">
+  <link rel="preload" as="image" href="./Assets/frames/frame-0020.webp" type="image/webp" fetchpriority="high">
 
   <style>
     /* ==========================================================================
@@ -2535,11 +2535,11 @@
 
 
       // ─────────────────────────────────────────────────────────────
-      // 2. 548-FRAME CANVAS SCROLL ENGINE WITH PREDICTIVE STREAMING
+      // 2. 551-FRAME CANVAS SCROLL ENGINE WITH WEBP PREDICTIVE STREAMING
       // ─────────────────────────────────────────────────────────────
       const START_FRAME = 20;
-      const END_FRAME = 567;
-      const TOTAL_FRAMES = END_FRAME - START_FRAME + 1; // 548 frames
+      const END_FRAME = 570;
+      const TOTAL_FRAMES = END_FRAME - START_FRAME + 1; // 551 frames (frame-0020.webp to frame-0570.webp)
       const SOURCE_WIDTH = 1920;
       const SOURCE_HEIGHT = 1080;
       const images = new Array(TOTAL_FRAMES);
@@ -2559,8 +2559,8 @@
       let lastRenderedFrame = -1;
       let lastDrawnImg = null;
 
-      // Active Concurrency Pool
-      const MAX_CONCURRENT_DOWNLOADS = 6;
+      // Active Concurrency Pool (High-Throughput for Lightweight WebP)
+      const MAX_CONCURRENT_DOWNLOADS = 8;
       let activeDownloads = 0;
 
       function resizeCanvas() {
@@ -2585,10 +2585,10 @@
         if (index < 0 || index >= TOTAL_FRAMES) return;
         let img = images[index];
 
-        // O(1) Instant Nearest-Frame Fallback (within ±6 frames, then lastDrawnImg)
+        // O(1) Instant Nearest-Frame Fallback (within ±8 frames, then lastDrawnImg)
         if (!img || !isDecodedMap[index]) {
           let found = null;
-          for (let d = 1; d <= 6; d++) {
+          for (let d = 1; d <= 8; d++) {
             const p = index - d;
             if (p >= 0 && isDecodedMap[p] && images[p]) {
               found = images[p];
@@ -2673,9 +2673,9 @@
       }
 
       // ─────────────────────────────────────────────────────────────
-      // PREDICTIVE STREAMING & ASYNCHRONOUS DECODING ENGINE
+      // PREDICTIVE STREAMING & ASYNCHRONOUS WEBP DECODING ENGINE
       // ─────────────────────────────────────────────────────────────
-      const INITIAL_BUFFER = Math.min(36, TOTAL_FRAMES); // ~5.5 MB (downloads and decodes in ~1.2-1.8s)
+      const INITIAL_BUFFER = Math.min(40, TOTAL_FRAMES); // ~2.2 MB in WebP (instant ~0.8-1.4s load)
       let initialBufferLoaded = 0;
       let isPreloaderComplete = false;
 
@@ -2689,7 +2689,6 @@
 
       function fetchAndDecodeFrame(index, priority = 'auto') {
         const actualIndex = START_FRAME + index;
-        const pad6 = String(actualIndex).padStart(6, '0');
         const pad4 = String(actualIndex).padStart(4, '0');
         const img = new Image();
         if ('fetchPriority' in img) img.fetchPriority = priority;
@@ -2720,7 +2719,7 @@
         };
 
         img.onload = () => {
-          // Asynchronously decompress JPEG in background thread before any draw call
+          // Off-thread asynchronous WebP decoding eliminates first-scroll jank completely
           if ('decode' in img) {
             img.decode().then(onDecoded).catch(onDecoded);
           } else {
@@ -2731,7 +2730,8 @@
         img.onerror = () => {
           if (!img._retried) {
             img._retried = true;
-            img.src = `./Assets/frames/frame_${pad4}.jpg`;
+            // Fallback attempt with underscore
+            img.src = `./Assets/frames/frame_${pad4}.webp`;
           } else {
             activeDownloads--;
             if (index < INITIAL_BUFFER) {
@@ -2742,7 +2742,8 @@
           }
         };
 
-        img.src = `./Assets/frames/frame_${pad6}.jpg`;
+        // Primary source: exact frame-0020.webp format in Assets/frames/
+        img.src = `./Assets/frames/frame-${pad4}.webp`;
       }
 
       function pumpStreamQueue() {
@@ -2750,8 +2751,8 @@
 
         const cur = Math.round(currentFrame);
 
-        // Priority 1: Window directly ahead of current user scroll position [cur, cur + 35]
-        for (let i = cur; i < Math.min(cur + 35, TOTAL_FRAMES); i++) {
+        // Priority 1: Window directly ahead of current user scroll position [cur, cur + 40]
+        for (let i = cur; i < Math.min(cur + 40, TOTAL_FRAMES); i++) {
           if (!requestedMap[i]) {
             requestedMap[i] = 1;
             activeDownloads++;
@@ -2760,8 +2761,8 @@
           }
         }
 
-        // Priority 2: Extended window [cur - 8, cur + 60]
-        for (let i = Math.max(0, cur - 8); i < Math.min(cur + 60, TOTAL_FRAMES); i++) {
+        // Priority 2: Extended window [cur - 10, cur + 70]
+        for (let i = Math.max(0, cur - 10); i < Math.min(cur + 70, TOTAL_FRAMES); i++) {
           if (!requestedMap[i]) {
             requestedMap[i] = 1;
             activeDownloads++;
@@ -2794,8 +2795,8 @@
       function preloadImages() {
         resizeCanvas();
 
-        // Safety fallback: ensure preloader unblocks within 2.4s regardless of network
-        setTimeout(finishLoading, 2400);
+        // Safety fallback: ensure preloader unblocks within 2.2s regardless of network
+        setTimeout(finishLoading, 2200);
 
         // Pre-request the first concurrent batch
         pumpStreamQueue();

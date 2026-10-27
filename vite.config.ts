@@ -12,8 +12,11 @@ export default defineConfig({
         const src = path.resolve(__dirname, 'Assets');
         const dest = path.resolve(__dirname, 'dist', 'Assets');
         if (fs.existsSync(src)) {
+          if (fs.existsSync(dest)) {
+            fs.rmSync(dest, { recursive: true, force: true });
+          }
           fs.cpSync(src, dest, { recursive: true });
-          console.log('[vite] Copied Assets to dist/Assets for Vercel deployment');
+          console.log('[vite] Cleaned and copied Assets to dist/Assets for Vercel deployment');
         }
       },
     },

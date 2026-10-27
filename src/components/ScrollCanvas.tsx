@@ -7,7 +7,7 @@ interface ScrollCanvasProps {
 
 export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
   startFrame = 20,
-  endFrame = 567,
+  endFrame = 570,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [loadProgress, setLoadProgress] = useState(0);
@@ -51,17 +51,17 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
     const isDecodedMap = new Uint8Array(totalFrames);
     const requestedMap = new Uint8Array(totalFrames);
     let activeDownloads = 0;
-    const MAX_CONCURRENT_DOWNLOADS = 6;
+    const MAX_CONCURRENT_DOWNLOADS = 8;
     let lastDrawnImg: HTMLImageElement | null = null;
 
     const renderFrame = (index: number) => {
       if (index < 0 || index >= totalFrames) return;
       let img = images[index];
 
-      // O(1) Instant Nearest-Frame Fallback (within ±6 frames, then lastDrawnImg)
+      // O(1) Instant Nearest-Frame Fallback (within ±8 frames, then lastDrawnImg)
       if (!img || !isDecodedMap[index]) {
         let found: HTMLImageElement | null = null;
-        for (let d = 1; d <= 6; d++) {
+        for (let d = 1; d <= 8; d++) {
           const p = index - d;
           if (p >= 0 && isDecodedMap[p] && images[p]) {
             found = images[p];
@@ -132,7 +132,7 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
     window.addEventListener('scroll', updateScroll, { passive: true });
 
     let isCompleted = false;
-    const criticalBuffer = Math.min(36, totalFrames);
+    const criticalBuffer = Math.min(40, totalFrames); // ~2.2 MB in WebP
     let initialBufferLoaded = 0;
 
     const finishLoading = () => {
@@ -147,11 +147,10 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       animationFrameId = requestAnimationFrame(animationLoop);
     };
 
-    setTimeout(finishLoading, 2400);
+    setTimeout(finishLoading, 2200);
 
     const fetchAndDecodeFrame = (index: number, priority: 'high' | 'low' | 'auto' = 'auto') => {
       const actualIndex = startFrame + index;
-      const pad6 = String(actualIndex).padStart(6, '0');
       const pad4 = String(actualIndex).padStart(4, '0');
       const img = new Image();
       if ('fetchPriority' in img) (img as any).fetchPriority = priority;
@@ -191,7 +190,7 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       img.onerror = () => {
         if (!(img as any)._retried) {
           (img as any)._retried = true;
-          img.src = `./Assets/frames/frame_${pad4}.jpg`;
+          img.src = `./Assets/frames/frame_${pad4}.webp`;
         } else {
           activeDownloads--;
           if (index < criticalBuffer) {
@@ -202,7 +201,7 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
         }
       };
 
-      img.src = `./Assets/frames/frame_${pad6}.jpg`;
+      img.src = `./Assets/frames/frame-${pad4}.webp`;
     };
 
     const pumpStreamQueue = () => {
@@ -210,8 +209,8 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
 
       const cur = Math.round(currentFrame);
 
-      // Priority 1: Window directly ahead of scroll [cur, cur + 35]
-      for (let i = cur; i < Math.min(cur + 35, totalFrames); i++) {
+      // Priority 1: Window directly ahead of scroll [cur, cur + 40]
+      for (let i = cur; i < Math.min(cur + 40, totalFrames); i++) {
         if (!requestedMap[i]) {
           requestedMap[i] = 1;
           activeDownloads++;
@@ -220,8 +219,8 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
         }
       }
 
-      // Priority 2: Extended window [cur - 8, cur + 60]
-      for (let i = Math.max(0, cur - 8); i < Math.min(cur + 60, totalFrames); i++) {
+      // Priority 2: Extended window [cur - 10, cur + 70]
+      for (let i = Math.max(0, cur - 10); i < Math.min(cur + 70, totalFrames); i++) {
         if (!requestedMap[i]) {
           requestedMap[i] = 1;
           activeDownloads++;
