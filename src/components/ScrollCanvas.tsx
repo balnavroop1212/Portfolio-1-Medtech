@@ -47,24 +47,37 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       renderFrame(Math.round(currentFrame));
     };
 
+    const isLoadedMap = new Uint8Array(totalFrames);
+    const isDecodedMap = new Uint8Array(totalFrames);
+    const requestedMap = new Uint8Array(totalFrames);
+    let activeDownloads = 0;
+    const MAX_CONCURRENT_DOWNLOADS = 6;
+    let lastDrawnImg: HTMLImageElement | null = null;
+
     const renderFrame = (index: number) => {
       if (index < 0 || index >= totalFrames) return;
       let img = images[index];
 
-      // Resilient Fallback: If exact frame is still streaming in, render the nearest loaded frame
-      if (!img || !img.complete || img.naturalWidth === 0) {
-        for (let d = 1; d < totalFrames; d++) {
-          if (index - d >= 0 && images[index - d] && images[index - d].complete && images[index - d].naturalWidth > 0) {
-            img = images[index - d];
+      // O(1) Instant Nearest-Frame Fallback (within ±6 frames, then lastDrawnImg)
+      if (!img || !isDecodedMap[index]) {
+        let found: HTMLImageElement | null = null;
+        for (let d = 1; d <= 6; d++) {
+          const p = index - d;
+          if (p >= 0 && isDecodedMap[p] && images[p]) {
+            found = images[p];
             break;
           }
-          if (index + d < totalFrames && images[index + d] && images[index + d].complete && images[index + d].naturalWidth > 0) {
-            img = images[index + d];
+          const n = index + d;
+          if (n < totalFrames && isDecodedMap[n] && images[n]) {
+            found = images[n];
             break;
           }
         }
+        img = found || lastDrawnImg || undefined;
       }
+
       if (!img || !img.complete || img.naturalWidth === 0) return;
+      lastDrawnImg = img;
 
       const cw = canvas.width;
       const ch = canvas.height;
@@ -91,6 +104,9 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
       const fraction = Math.max(0, Math.min(1, scrollY / maxScroll));
       targetFrame = fraction * (totalFrames - 1);
+
+      // Prioritize frames ahead of user's current scroll
+      pumpStreamQueue();
     };
 
     const animationLoop = () => {
@@ -110,12 +126,15 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       animationFrameId = requestAnimationFrame(animationLoop);
     };
 
-    // Preload all frames into browser cache
+    // Preload setup
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas, { passive: true });
     window.addEventListener('scroll', updateScroll, { passive: true });
 
     let isCompleted = false;
+    const criticalBuffer = Math.min(36, totalFrames);
+    let initialBufferLoaded = 0;
+
     const finishLoading = () => {
       if (isCompleted) return;
       isCompleted = true;
@@ -128,34 +147,44 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       animationFrameId = requestAnimationFrame(animationLoop);
     };
 
-    setTimeout(finishLoading, 2000);
+    setTimeout(finishLoading, 2400);
 
-    const criticalBuffer = Math.min(18, totalFrames);
-    let tier1Loaded = 0;
-
-    const loadFrame = (i: number, priority: 'high' | 'low' | 'auto' = 'auto') => {
-      if (images[i]) return images[i];
-
-      const actualIndex = startFrame + i;
+    const fetchAndDecodeFrame = (index: number, priority: 'high' | 'low' | 'auto' = 'auto') => {
+      const actualIndex = startFrame + index;
       const pad6 = String(actualIndex).padStart(6, '0');
       const pad4 = String(actualIndex).padStart(4, '0');
       const img = new Image();
       if ('fetchPriority' in img) (img as any).fetchPriority = priority;
 
-      img.onload = () => {
+      const onDecoded = () => {
+        images[index] = img;
+        isLoadedMap[index] = 1;
+        isDecodedMap[index] = 1;
         loadedCount++;
-        if (i < criticalBuffer) {
-          tier1Loaded++;
-          const progress = Math.min(100, Math.round((tier1Loaded / criticalBuffer) * 100));
+
+        if (index < criticalBuffer) {
+          initialBufferLoaded++;
+          const progress = Math.min(100, Math.round((initialBufferLoaded / criticalBuffer) * 100));
           setLoadProgress(progress);
         }
 
-        if (loadedCount === 1) {
+        if (loadedCount === 1 || index === 0) {
           renderFrame(0);
         }
 
-        if (tier1Loaded >= criticalBuffer) {
+        if (initialBufferLoaded >= criticalBuffer) {
           finishLoading();
+        }
+
+        activeDownloads--;
+        pumpStreamQueue();
+      };
+
+      img.onload = () => {
+        if ('decode' in img) {
+          img.decode().then(onDecoded).catch(onDecoded);
+        } else {
+          onDecoded();
         }
       };
 
@@ -164,52 +193,66 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
           (img as any)._retried = true;
           img.src = `./Assets/frames/frame_${pad4}.jpg`;
         } else {
-          if (i < criticalBuffer) {
-            tier1Loaded++;
-            if (tier1Loaded >= criticalBuffer) finishLoading();
+          activeDownloads--;
+          if (index < criticalBuffer) {
+            initialBufferLoaded++;
+            if (initialBufferLoaded >= criticalBuffer) finishLoading();
           }
+          pumpStreamQueue();
         }
       };
 
       img.src = `./Assets/frames/frame_${pad6}.jpg`;
-      images[i] = img;
-      return img;
     };
 
-    // 1. Immediately load Critical Hero Buffer
-    for (let i = 0; i < criticalBuffer; i++) {
-      loadFrame(i, i === 0 ? 'high' : 'auto');
-    }
+    const pumpStreamQueue = () => {
+      if (activeDownloads >= MAX_CONCURRENT_DOWNLOADS) return;
 
-    // 2. Request Keyframe Skeleton across timeline (every 8th frame)
-    setTimeout(() => {
-      for (let i = criticalBuffer; i < totalFrames; i += 8) {
-        loadFrame(i, 'low');
+      const cur = Math.round(currentFrame);
+
+      // Priority 1: Window directly ahead of scroll [cur, cur + 35]
+      for (let i = cur; i < Math.min(cur + 35, totalFrames); i++) {
+        if (!requestedMap[i]) {
+          requestedMap[i] = 1;
+          activeDownloads++;
+          fetchAndDecodeFrame(i, 'high');
+          if (activeDownloads >= MAX_CONCURRENT_DOWNLOADS) return;
+        }
       }
-    }, 120);
 
-    // 3. Background stream remaining interstitial frames
-    setTimeout(() => {
-      let nextIndex = 0;
-      const streamBatch = () => {
-        let queued = 0;
-        while (nextIndex < totalFrames && queued < 8) {
-          if (!images[nextIndex]) {
-            loadFrame(nextIndex, 'low');
-            queued++;
-          }
-          nextIndex++;
+      // Priority 2: Extended window [cur - 8, cur + 60]
+      for (let i = Math.max(0, cur - 8); i < Math.min(cur + 60, totalFrames); i++) {
+        if (!requestedMap[i]) {
+          requestedMap[i] = 1;
+          activeDownloads++;
+          fetchAndDecodeFrame(i, 'auto');
+          if (activeDownloads >= MAX_CONCURRENT_DOWNLOADS) return;
         }
-        if (nextIndex < totalFrames) {
-          if ('requestIdleCallback' in window) {
-            (window as any).requestIdleCallback(streamBatch, { timeout: 100 });
-          } else {
-            setTimeout(streamBatch, 35);
-          }
+      }
+
+      // Priority 3: Keyframes across timeline (every 4th frame)
+      for (let i = 0; i < totalFrames; i += 4) {
+        if (!requestedMap[i]) {
+          requestedMap[i] = 1;
+          activeDownloads++;
+          fetchAndDecodeFrame(i, 'low');
+          if (activeDownloads >= MAX_CONCURRENT_DOWNLOADS) return;
         }
-      };
-      streamBatch();
-    }, 500);
+      }
+
+      // Priority 4: Remaining frames
+      for (let i = 0; i < totalFrames; i++) {
+        if (!requestedMap[i]) {
+          requestedMap[i] = 1;
+          activeDownloads++;
+          fetchAndDecodeFrame(i, 'low');
+          if (activeDownloads >= MAX_CONCURRENT_DOWNLOADS) return;
+        }
+      }
+    };
+
+    // Pre-request the first batch to fill concurrency pool
+    pumpStreamQueue();
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);

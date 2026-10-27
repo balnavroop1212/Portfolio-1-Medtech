@@ -2535,7 +2535,7 @@
 
 
       // ─────────────────────────────────────────────────────────────
-      // 2. 548-FRAME CANVAS SCROLL ENGINE (FRAMES 20 TO 567)
+      // 2. 548-FRAME CANVAS SCROLL ENGINE WITH PREDICTIVE STREAMING
       // ─────────────────────────────────────────────────────────────
       const START_FRAME = 20;
       const END_FRAME = 567;
@@ -2543,6 +2543,9 @@
       const SOURCE_WIDTH = 1920;
       const SOURCE_HEIGHT = 1080;
       const images = new Array(TOTAL_FRAMES);
+      const isLoadedMap = new Uint8Array(TOTAL_FRAMES);
+      const isDecodedMap = new Uint8Array(TOTAL_FRAMES);
+      const requestedMap = new Uint8Array(TOTAL_FRAMES);
 
       const canvas = document.getElementById('hero-canvas');
       const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
@@ -2554,6 +2557,11 @@
       let targetFrame = 0;
       let currentFrame = 0;
       let lastRenderedFrame = -1;
+      let lastDrawnImg = null;
+
+      // Active Concurrency Pool
+      const MAX_CONCURRENT_DOWNLOADS = 6;
+      let activeDownloads = 0;
 
       function resizeCanvas() {
         const dpr = Math.max(window.devicePixelRatio || 1, 1);
@@ -2577,20 +2585,26 @@
         if (index < 0 || index >= TOTAL_FRAMES) return;
         let img = images[index];
 
-        // Resilient Fallback: If exact frame is still streaming in, render the nearest loaded frame
-        if (!img || !img.complete || img.naturalWidth === 0) {
-          for (let d = 1; d < TOTAL_FRAMES; d++) {
-            if (index - d >= 0 && images[index - d] && images[index - d].complete && images[index - d].naturalWidth > 0) {
-              img = images[index - d];
+        // O(1) Instant Nearest-Frame Fallback (within ±6 frames, then lastDrawnImg)
+        if (!img || !isDecodedMap[index]) {
+          let found = null;
+          for (let d = 1; d <= 6; d++) {
+            const p = index - d;
+            if (p >= 0 && isDecodedMap[p] && images[p]) {
+              found = images[p];
               break;
             }
-            if (index + d < TOTAL_FRAMES && images[index + d] && images[index + d].complete && images[index + d].naturalWidth > 0) {
-              img = images[index + d];
+            const n = index + d;
+            if (n < TOTAL_FRAMES && isDecodedMap[n] && images[n]) {
+              found = images[n];
               break;
             }
           }
+          img = found || lastDrawnImg;
         }
+
         if (!img || !img.complete || img.naturalWidth === 0) return;
+        lastDrawnImg = img;
 
         const cw = canvas.width;
         const ch = canvas.height;
@@ -2609,7 +2623,6 @@
       }
 
       function updateScroll() {
-        // Calculate scroll progress across the animation sections (before #contact)
         const contactSection = document.getElementById('contact');
         const animEndScroll = contactSection ? contactSection.offsetTop - window.innerHeight : document.documentElement.scrollHeight - window.innerHeight;
 
@@ -2618,6 +2631,9 @@
         const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
         const fraction = Math.max(0, Math.min(1, scrollY / animEndScroll));
         targetFrame = fraction * (TOTAL_FRAMES - 1);
+
+        // Dynamically prioritize frames in the direction of scrolling
+        pumpStreamQueue();
 
         // Mobile Curtain Safety: Ensure canvas hides completely once contact section covers it
         const isMobile = window.innerWidth <= 768;
@@ -2656,107 +2672,133 @@
         requestAnimationFrame(animationLoop);
       }
 
+      // ─────────────────────────────────────────────────────────────
+      // PREDICTIVE STREAMING & ASYNCHRONOUS DECODING ENGINE
+      // ─────────────────────────────────────────────────────────────
+      const INITIAL_BUFFER = Math.min(36, TOTAL_FRAMES); // ~5.5 MB (downloads and decodes in ~1.2-1.8s)
+      let initialBufferLoaded = 0;
+      let isPreloaderComplete = false;
+
+      function finishLoading() {
+        if (isPreloaderComplete) return;
+        isPreloaderComplete = true;
+        if (preloaderFill) preloaderFill.style.width = '100%';
+        if (preloaderStatus) preloaderStatus.textContent = 'OPTICS CALIBRATED · 100%';
+        setTimeout(onAllLoaded, 180);
+      }
+
+      function fetchAndDecodeFrame(index, priority = 'auto') {
+        const actualIndex = START_FRAME + index;
+        const pad6 = String(actualIndex).padStart(6, '0');
+        const pad4 = String(actualIndex).padStart(4, '0');
+        const img = new Image();
+        if ('fetchPriority' in img) img.fetchPriority = priority;
+
+        const onDecoded = () => {
+          images[index] = img;
+          isLoadedMap[index] = 1;
+          isDecodedMap[index] = 1;
+          loadedCount++;
+
+          if (index < INITIAL_BUFFER) {
+            initialBufferLoaded++;
+            const pct = Math.min(100, Math.round((initialBufferLoaded / INITIAL_BUFFER) * 100));
+            if (preloaderFill) preloaderFill.style.width = pct + '%';
+            if (preloaderStatus) preloaderStatus.textContent = `CALIBRATING OPTICS · ${pct}%`;
+          }
+
+          if (loadedCount === 1 || index === 0) {
+            renderFrame(0);
+          }
+
+          if (initialBufferLoaded >= INITIAL_BUFFER) {
+            finishLoading();
+          }
+
+          activeDownloads--;
+          pumpStreamQueue();
+        };
+
+        img.onload = () => {
+          // Asynchronously decompress JPEG in background thread before any draw call
+          if ('decode' in img) {
+            img.decode().then(onDecoded).catch(onDecoded);
+          } else {
+            onDecoded();
+          }
+        };
+
+        img.onerror = () => {
+          if (!img._retried) {
+            img._retried = true;
+            img.src = `./Assets/frames/frame_${pad4}.jpg`;
+          } else {
+            activeDownloads--;
+            if (index < INITIAL_BUFFER) {
+              initialBufferLoaded++;
+              if (initialBufferLoaded >= INITIAL_BUFFER) finishLoading();
+            }
+            pumpStreamQueue();
+          }
+        };
+
+        img.src = `./Assets/frames/frame_${pad6}.jpg`;
+      }
+
+      function pumpStreamQueue() {
+        if (activeDownloads >= MAX_CONCURRENT_DOWNLOADS) return;
+
+        const cur = Math.round(currentFrame);
+
+        // Priority 1: Window directly ahead of current user scroll position [cur, cur + 35]
+        for (let i = cur; i < Math.min(cur + 35, TOTAL_FRAMES); i++) {
+          if (!requestedMap[i]) {
+            requestedMap[i] = 1;
+            activeDownloads++;
+            fetchAndDecodeFrame(i, 'high');
+            if (activeDownloads >= MAX_CONCURRENT_DOWNLOADS) return;
+          }
+        }
+
+        // Priority 2: Extended window [cur - 8, cur + 60]
+        for (let i = Math.max(0, cur - 8); i < Math.min(cur + 60, TOTAL_FRAMES); i++) {
+          if (!requestedMap[i]) {
+            requestedMap[i] = 1;
+            activeDownloads++;
+            fetchAndDecodeFrame(i, 'auto');
+            if (activeDownloads >= MAX_CONCURRENT_DOWNLOADS) return;
+          }
+        }
+
+        // Priority 3: Keyframe skeleton across the whole timeline (every 4th frame)
+        for (let i = 0; i < TOTAL_FRAMES; i += 4) {
+          if (!requestedMap[i]) {
+            requestedMap[i] = 1;
+            activeDownloads++;
+            fetchAndDecodeFrame(i, 'low');
+            if (activeDownloads >= MAX_CONCURRENT_DOWNLOADS) return;
+          }
+        }
+
+        // Priority 4: All remaining interstitial frames
+        for (let i = 0; i < TOTAL_FRAMES; i++) {
+          if (!requestedMap[i]) {
+            requestedMap[i] = 1;
+            activeDownloads++;
+            fetchAndDecodeFrame(i, 'low');
+            if (activeDownloads >= MAX_CONCURRENT_DOWNLOADS) return;
+          }
+        }
+      }
+
       function preloadImages() {
         resizeCanvas();
 
-        let isCompleted = false;
-        const finishLoading = () => {
-          if (isCompleted) return;
-          isCompleted = true;
-          if (preloaderFill) preloaderFill.style.width = '100%';
-          if (preloaderStatus) preloaderStatus.textContent = 'OPTICS CALIBRATED · 100%';
-          setTimeout(onAllLoaded, 180);
-        };
+        // Safety fallback: ensure preloader unblocks within 2.4s regardless of network
+        setTimeout(finishLoading, 2400);
 
-        // Absolute safety timeout: unlock within 2.0 seconds regardless of network conditions
-        setTimeout(finishLoading, 2000);
-
-        // Tier 1: Critical Hero Buffer (First 18 frames = ~2.8 MB)
-        // Downloads in ~0.5-1.0s on broadband or mobile 4G/5G
-        const CRITICAL_BUFFER = Math.min(18, TOTAL_FRAMES);
-        let tier1Loaded = 0;
-
-        function loadFrame(i, priority = 'auto') {
-          if (images[i]) return images[i];
-
-          const actualIndex = START_FRAME + i;
-          const pad6 = String(actualIndex).padStart(6, '0');
-          const pad4 = String(actualIndex).padStart(4, '0');
-          const img = new Image();
-          if ('fetchPriority' in img) img.fetchPriority = priority;
-
-          img.onload = () => {
-            loadedCount++;
-            if (i < CRITICAL_BUFFER) {
-              tier1Loaded++;
-              const percent = Math.min(100, Math.round((tier1Loaded / CRITICAL_BUFFER) * 100));
-              if (preloaderFill) preloaderFill.style.width = percent + '%';
-              if (preloaderStatus) preloaderStatus.textContent = `CALIBRATING OPTICS · ${percent}%`;
-            }
-
-            if (loadedCount === 1) {
-              renderFrame(0);
-            }
-
-            // Instantly reveal and make interactive when critical hero buffer is ready!
-            if (tier1Loaded >= CRITICAL_BUFFER) {
-              finishLoading();
-            }
-          };
-
-          img.onerror = () => {
-            if (!img._retried) {
-              img._retried = true;
-              img.src = `./Assets/frames/frame_${pad4}.jpg`;
-            } else {
-              if (i < CRITICAL_BUFFER) {
-                tier1Loaded++;
-                if (tier1Loaded >= CRITICAL_BUFFER) finishLoading();
-              }
-            }
-          };
-
-          img.src = `./Assets/frames/frame_${pad6}.jpg`;
-          images[i] = img;
-          return img;
-        }
-
-        // 1. Immediately request the Critical Hero Buffer (High Priority)
-        for (let i = 0; i < CRITICAL_BUFFER; i++) {
-          loadFrame(i, i === 0 ? 'high' : 'auto');
-        }
-
-        // 2. Request Keyframe Skeleton across the whole timeline (every 8th frame)
-        // Takes ~65 requests; guarantees a sharp frame at any scroll position immediately
-        setTimeout(() => {
-          for (let i = CRITICAL_BUFFER; i < TOTAL_FRAMES; i += 8) {
-            loadFrame(i, 'low');
-          }
-        }, 120);
-
-        // 3. Background Stream: Sequentially fill remaining interstitial frames in smooth micro-batches
-        // Leaves main thread and network completely free for interactions
-        setTimeout(() => {
-          let nextIndex = 0;
-          function streamBatch() {
-            let queued = 0;
-            while (nextIndex < TOTAL_FRAMES && queued < 8) {
-              if (!images[nextIndex]) {
-                loadFrame(nextIndex, 'low');
-                queued++;
-              }
-              nextIndex++;
-            }
-            if (nextIndex < TOTAL_FRAMES) {
-              if ('requestIdleCallback' in window) {
-                window.requestIdleCallback(streamBatch, { timeout: 100 });
-              } else {
-                setTimeout(streamBatch, 35);
-              }
-            }
-          }
-          streamBatch();
-        }, 500);
+        // Pre-request the first concurrent batch
+        pumpStreamQueue();
       }
 
       function onAllLoaded() {
