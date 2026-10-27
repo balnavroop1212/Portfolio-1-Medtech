@@ -6,7 +6,7 @@ interface ScrollCanvasProps {
 }
 
 export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
-  startFrame = 20,
+  startFrame = 0,
   endFrame = 567,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -101,9 +101,24 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
     window.addEventListener('resize', resizeCanvas, { passive: true });
     window.addEventListener('scroll', updateScroll, { passive: true });
 
+    let isCompleted = false;
+    const finishLoading = () => {
+      if (isCompleted) return;
+      isCompleted = true;
+      setIsLoaded(true);
+      resizeCanvas();
+      updateScroll();
+      currentFrame = targetFrame;
+      renderFrame(Math.round(currentFrame));
+      animationFrameId = requestAnimationFrame(animationLoop);
+    };
+
+    setTimeout(finishLoading, 4000);
+
     for (let i = 0; i < totalFrames; i++) {
       const actualIndex = startFrame + i;
-      const paddedIndex = String(actualIndex).padStart(6, '0');
+      const pad6 = String(actualIndex).padStart(6, '0');
+      const pad4 = String(actualIndex).padStart(4, '0');
       const img = new Image();
 
       const onFrameLoad = () => {
@@ -115,19 +130,21 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
           renderFrame(0);
         }
 
-        if (loadedCount === totalFrames) {
-          setIsLoaded(true);
-          resizeCanvas();
-          updateScroll();
-          currentFrame = targetFrame;
-          renderFrame(Math.round(currentFrame));
-          animationFrameId = requestAnimationFrame(animationLoop);
+        if (loadedCount >= totalFrames) {
+          finishLoading();
         }
       };
 
       img.onload = onFrameLoad;
-      img.onerror = onFrameLoad;
-      img.src = `/Assets/frames/frame_${paddedIndex}.jpg`;
+      img.onerror = () => {
+        if (!(img as any)._retried) {
+          (img as any)._retried = true;
+          img.src = `./Assets/frames/frame_${pad4}.jpg`;
+        } else {
+          onFrameLoad();
+        }
+      };
+      img.src = `./Assets/frames/frame_${pad6}.jpg`;
       images[i] = img;
     }
 
