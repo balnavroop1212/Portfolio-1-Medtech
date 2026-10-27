@@ -1465,7 +1465,7 @@
         margin-top: 0 !important;
         padding-top: 16px !important;
         padding-bottom: 24px !important;
-        margin-bottom: 35vh !important;
+        margin-bottom: 18vh !important;
         opacity: 1 !important;
         visibility: visible !important;
       }
@@ -1549,12 +1549,13 @@
         display: none !important;
       }
 
-      /* 6. Tighten vertical spacing between mobile story cards so there are no long blank gaps */
+      /* 6. Tighten vertical spacing between mobile story cards so there are no long blank gaps (fixes empty cream gap at 00:01-00:04) */
       .story-section, .scroll-step, .chapter-block, section.site-section {
         min-height: auto !important;
         justify-content: flex-start !important;
         padding: 24px 16px !important;
-        margin-bottom: 40vh !important;
+        margin-top: 0 !important;
+        margin-bottom: 18vh !important;
       }
 
       section.site-section:last-of-type,
@@ -1680,12 +1681,25 @@
         padding-left: 2px !important;
       }
 
-      /* Section 8 & 9: Contact & Footer slide smoothly over the top of the canvas */
-      #contact {
+      /* 8. Fix the 00:08 & 00:10 bug: Make Contact Section + Footer a solid z-index: 40 curtain so the camera NEVER pokes through */
+      #contact,
+      .contact-section,
+      section:last-of-type,
+      footer,
+      #footer {
         position: relative !important;
         z-index: 40 !important;
-        padding: 70px 16px 50px !important;
-        background-color: var(--bg-studio) !important;
+        background-color: #F6F5F0 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+      }
+
+      /* Add padding inside the Contact section instead of outer margin so there is zero transparent gap above Footer */
+      #contact,
+      .contact-section,
+      section:last-of-type {
+        padding-top: 48px !important;
+        padding-bottom: 72px !important;
       }
 
       .contact-layout-studio {
@@ -1715,12 +1729,6 @@
       }
 
       /* 7. Keep Footer cleanly wrapped in 2 rows */
-      #footer {
-        position: relative !important;
-        z-index: 40 !important;
-        background-color: var(--bg-studio) !important;
-      }
-
       #footer .footer-top-row,
       footer .footer-top-row {
         flex-direction: column !important;
@@ -2562,6 +2570,20 @@
         const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
         const fraction = Math.max(0, Math.min(1, scrollY / animEndScroll));
         targetFrame = fraction * (TOTAL_FRAMES - 1);
+
+        // Mobile Curtain Safety: Ensure canvas hides completely once contact section covers it
+        const isMobile = window.innerWidth <= 768;
+        if (contactSection && isMobile) {
+          const canvasContainer = document.querySelector('.canvas-container');
+          if (canvasContainer) {
+            if (scrollY >= contactSection.offsetTop - window.innerHeight * 0.44) {
+              canvasContainer.style.opacity = '0';
+              canvasContainer.style.pointerEvents = 'none';
+            } else {
+              canvasContainer.style.opacity = '1';
+            }
+          }
+        }
 
         // Active Section ScrollSpy
         updateScrollSpy(scrollY);

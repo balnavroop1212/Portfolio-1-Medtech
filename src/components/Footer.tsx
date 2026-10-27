@@ -20,7 +20,7 @@ export const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="w-full bg-black text-white pt-16 sm:pt-20 pb-12 border-t border-white/20">
+    <footer className="relative z-40 w-full bg-black text-white pt-16 sm:pt-20 pb-12 border-t border-white/20">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 md:px-12 space-y-12">
         {/* Top Row: Logo & Tagline */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-10 border-b border-white/20">
