@@ -6,7 +6,7 @@ interface ScrollCanvasProps {
 }
 
 export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
-  startFrame = 0,
+  startFrame = 20,
   endFrame = 567,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
