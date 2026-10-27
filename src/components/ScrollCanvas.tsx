@@ -49,7 +49,21 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
 
     const renderFrame = (index: number) => {
       if (index < 0 || index >= totalFrames) return;
-      const img = images[index];
+      let img = images[index];
+
+      // Resilient Fallback: If exact frame is still streaming in, render the nearest loaded frame
+      if (!img || !img.complete || img.naturalWidth === 0) {
+        for (let d = 1; d < totalFrames; d++) {
+          if (index - d >= 0 && images[index - d] && images[index - d].complete && images[index - d].naturalWidth > 0) {
+            img = images[index - d];
+            break;
+          }
+          if (index + d < totalFrames && images[index + d] && images[index + d].complete && images[index + d].naturalWidth > 0) {
+            img = images[index + d];
+            break;
+          }
+        }
+      }
       if (!img || !img.complete || img.naturalWidth === 0) return;
 
       const cw = canvas.width;
@@ -105,6 +119,7 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
     const finishLoading = () => {
       if (isCompleted) return;
       isCompleted = true;
+      setLoadProgress(100);
       setIsLoaded(true);
       resizeCanvas();
       updateScroll();
@@ -113,40 +128,88 @@ export const ScrollCanvas: React.FC<ScrollCanvasProps> = ({
       animationFrameId = requestAnimationFrame(animationLoop);
     };
 
-    setTimeout(finishLoading, 4000);
+    setTimeout(finishLoading, 2000);
 
-    for (let i = 0; i < totalFrames; i++) {
+    const criticalBuffer = Math.min(18, totalFrames);
+    let tier1Loaded = 0;
+
+    const loadFrame = (i: number, priority: 'high' | 'low' | 'auto' = 'auto') => {
+      if (images[i]) return images[i];
+
       const actualIndex = startFrame + i;
       const pad6 = String(actualIndex).padStart(6, '0');
       const pad4 = String(actualIndex).padStart(4, '0');
       const img = new Image();
+      if ('fetchPriority' in img) (img as any).fetchPriority = priority;
 
-      const onFrameLoad = () => {
+      img.onload = () => {
         loadedCount++;
-        const progress = Math.round((loadedCount / totalFrames) * 100);
-        setLoadProgress(progress);
+        if (i < criticalBuffer) {
+          tier1Loaded++;
+          const progress = Math.min(100, Math.round((tier1Loaded / criticalBuffer) * 100));
+          setLoadProgress(progress);
+        }
 
         if (loadedCount === 1) {
           renderFrame(0);
         }
 
-        if (loadedCount >= totalFrames) {
+        if (tier1Loaded >= criticalBuffer) {
           finishLoading();
         }
       };
 
-      img.onload = onFrameLoad;
       img.onerror = () => {
         if (!(img as any)._retried) {
           (img as any)._retried = true;
           img.src = `./Assets/frames/frame_${pad4}.jpg`;
         } else {
-          onFrameLoad();
+          if (i < criticalBuffer) {
+            tier1Loaded++;
+            if (tier1Loaded >= criticalBuffer) finishLoading();
+          }
         }
       };
+
       img.src = `./Assets/frames/frame_${pad6}.jpg`;
       images[i] = img;
+      return img;
+    };
+
+    // 1. Immediately load Critical Hero Buffer
+    for (let i = 0; i < criticalBuffer; i++) {
+      loadFrame(i, i === 0 ? 'high' : 'auto');
     }
+
+    // 2. Request Keyframe Skeleton across timeline (every 8th frame)
+    setTimeout(() => {
+      for (let i = criticalBuffer; i < totalFrames; i += 8) {
+        loadFrame(i, 'low');
+      }
+    }, 120);
+
+    // 3. Background stream remaining interstitial frames
+    setTimeout(() => {
+      let nextIndex = 0;
+      const streamBatch = () => {
+        let queued = 0;
+        while (nextIndex < totalFrames && queued < 8) {
+          if (!images[nextIndex]) {
+            loadFrame(nextIndex, 'low');
+            queued++;
+          }
+          nextIndex++;
+        }
+        if (nextIndex < totalFrames) {
+          if ('requestIdleCallback' in window) {
+            (window as any).requestIdleCallback(streamBatch, { timeout: 100 });
+          } else {
+            setTimeout(streamBatch, 35);
+          }
+        }
+      };
+      streamBatch();
+    }, 500);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
